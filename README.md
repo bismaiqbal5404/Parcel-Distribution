@@ -1,2 +1,1 @@
-# Parcel-Delivery-System
-DSA Project
+Remove README content to delete file

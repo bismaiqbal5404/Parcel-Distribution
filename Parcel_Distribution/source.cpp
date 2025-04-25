@@ -18,6 +18,7 @@ bool loginUser(); // Login
 struct users {
 	string username;
 	string password;
+	string type;
 }userInfo;
 
 // function to set color 

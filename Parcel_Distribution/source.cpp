@@ -18,6 +18,7 @@ bool loginUser(); // Login
 struct users {
 	string username;
 	string password;
+	string role;
 }userInfo;
 
 // function to set color 
@@ -132,7 +133,7 @@ bool registerUser() {
 	bool check = false;
 	bool validUsername = false;
 	while (!validUsername) {
-		cout << "Enter username: ";
+		cout << "\nEnter username: ";
 		getline(cin, userInfo.username);
 		if (startsWithLetters(userInfo.username)) {
 			validUsername = true;
@@ -149,6 +150,12 @@ bool registerUser() {
 				fileName = userInfo.username + ".txt";
 				cout << "\tEnter password: ";
 				getline(cin, userInfo.password);
+				cout << "\tEnter role (rider/customer): ";
+				getline(cin, userInfo.role);
+				while (userInfo.role != "rider" && userInfo.role != "customer") {
+					cout << "\tInvalid role. Please enter 'rider' or 'customer': ";
+					getline(cin, userInfo.role);
+				}
 			}
 		}
 	}
@@ -163,7 +170,7 @@ bool registerUser() {
 	fstream outfile("users.txt", ios::app); // this file stores all the info about user 
 	if (outfile.is_open())
 	{
-		outfile << userInfo.username << " " << userInfo.password << "\n";
+		outfile << userInfo.username << " " << userInfo.password << " " << userInfo.role << "\n";
 		outfile.close();
 		string fileName = userInfo.username + ".txt";
 		cout << "Registration Successful" << endl;
@@ -195,7 +202,7 @@ bool checkUsername(const string& username) {
 // function to login 
 bool loginUser()
 {
-	string u, p, name, password, f;
+	string u, p, name, password, f,role;
 	double i;
 	bool flag = 0;
 	cout << "\n\tLogin Info:" << endl;
@@ -205,15 +212,28 @@ bool loginUser()
 	cin >> password;
 	fstream inFile("users.txt", ios::in); // Open file for reading 
 	if (inFile.is_open()) {
-		while (inFile >> u >> p >> i >> f) {
+		while (inFile >> u >> p >>role) {
 			if (u == name && p == password) {
 				inFile.close();
-				flag = 1;
 				fileName = name + ".txt";
-				cout << "\tLogin Successful" << endl;
+				userInfo.username = u;
+				userInfo.role = role;
+				userInfo.password = p;
+				cout << "\tLogin Successful." << endl;
+
+				if (role == "customer") {
+					cout << "\n\tWelcome, customer " << userInfo.username << "!" << endl;
+					// add customer menu here
+				}
+				else if (role == "rider") {
+					cout << "\n\tWelcome, rider " << userInfo.username << "!" << endl;
+					// add rider menu here
+				}
+
 				return true;
 			}
-		}inFile.close();
+		}
+		inFile.close();
 		if (!flag) {
 			cout << "\tLogin Unsuccessful, please provide correct credentials next time!" << endl;
 			return false;

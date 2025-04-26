@@ -3,6 +3,7 @@
 #include<fstream>
 #include<sstream>
 #include<vector>
+#include<queue>
 #include<unordered_map>
 using namespace std;
 
@@ -94,6 +95,34 @@ void loadGraphFromFile(const string& path, Graph& G) {
 	}
 }
 
+static unordered_map<Node*, double> dijkstra(int V ,string sourceCode, Graph G) {
+	priority_queue<pair<double, Node*>, vector<pair<double, Node*>>, greater<pair<double, Node*>>> pq;
+
+	unordered_map<Node*, double> dist;
+
+	Node* src = G.nodesByCode[sourceCode];
+	pq.push({ 0.0, src });
+	dist[src] = 0.0;
+
+	while (!pq.empty()) {
+		Node* u = pq.top().second;
+		double currentDist = pq.top().first;
+		pq.pop();
+
+		for (auto& neighbor : u->neighbors) {
+			Node* nextNode = neighbor.first;
+			double edgeCost = neighbor.second;
+			double newDist = currentDist + edgeCost;
+
+			if (!dist.count(nextNode) || dist[nextNode] > newDist) {
+				dist[nextNode] = newDist;
+				pq.push({ newDist, nextNode });
+			}
+		}
+	}
+	return dist;
+}
+
 void main() {
 	string fileName = "routes.txt";
 	Graph G;
@@ -102,8 +131,12 @@ void main() {
 	cout << "Nodes Loaded: " << G.nodesByCode.size() << endl;
 	cout << "Zones loaded: " << G.zonesById.size() << endl;
 
-	for (auto& pair : G.nodesByCode) {
-		Node* n = pair.second;
-		cout << n->code << " ( " << n->areaName << ") " << n->neighbors.size() << " neighbors\n";
-	}
+	//for (auto& pair : G.nodesByCode) {
+	//	Node* n = pair.second;
+	//	cout << n->code << " ( " << n->areaName << ") " << n->neighbors.size() << " neighbors\n";
+	//}
+	unordered_map<Node*, double> result = dijkstra(G.nodesByCode.size(), "A1", G);
+	for (auto& dist : result)
+		cout << "The distance from A1 to " << dist.first->code << " is " << dist.second << " " << endl;
+
 }

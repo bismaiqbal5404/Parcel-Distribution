@@ -263,7 +263,7 @@ bool startsWithLetters(const string& str) {
 }
 
 
-void main() {
-	int log = welcome(); // user selects an option i.e Login / signup 
-	menu1(log);
-}
+//void main() {
+//	int log = welcome(); // user selects an option i.e Login / signup 
+//	menu1(log);
+//}

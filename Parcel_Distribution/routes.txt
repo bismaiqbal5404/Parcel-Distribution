@@ -1,0 +1,485 @@
+ZONE A "Gulshan-e-Hadeed"
+
+NODE A1 "Gulshan Mor"
+NODE A2 "Bata Mor"
+NODE A3 "Phase 1 Market"
+NODE A4 "Sidhu Chowk"
+NODE A5 "Monday Bazar"
+NODE A6 "L1 Market"
+NODE A7 "Ideal Super Mart"
+NODE A8 "Ayesha Hospital"
+NODE A9 "KE Colony"
+NODE A10 "Al Khidmat Hospital"
+NODE A11 "Hill Top Park"
+NODE A12 "Gallant Foundation school"
+NODE A13 "Sohny sweets"
+
+EDGE A1 A10 2
+EDGE A1 A11 1
+EDGE A1 A12 1.2
+EDGE A1 A13 0.5
+EDGE A1 A2 0.2
+EDGE A1 A4 1.3
+EDGE A1 A7 1.5
+EDGE A1 A8 1.5
+EDGE A1 A9 1
+EDGE A10 A11 1.3
+EDGE A10 A13 1.8
+EDGE A10 A6 2
+EDGE A10 A8 1.5
+EDGE A11 A12 0.3
+EDGE A2 A3 0.5
+EDGE A3 A4 0.3
+EDGE A3 A5 0.5
+EDGE A4 A7 0.2
+EDGE A5 A6 0.2
+EDGE A5 A8 0.2
+EDGE A5 A9 0.7
+EDGE A6 A9 0.6
+EDGE A7 A8 0.2
+
+ZONE B "Saddar"
+
+NODE B1 "Empress Market"
+NODE B2 "Passport Office"
+NODE B3 "Zainab Market"
+NODE B4 "Governor House"
+NODE B5 "Regal Chowk"
+NODE B6 "Plaza"
+NODE B7 "Cooperative Market"
+NODE B8 "Amma Tower"
+NODE B9 "Jama Cloth"
+NODE B10 "Church"
+NODE B11 "Jahangir Park"
+
+EDGE B1 B11 0.1
+EDGE B1 B2 1
+EDGE B1 B3 1
+EDGE B1 B5 1
+EDGE B1 B8 0.5
+EDGE B10 B3 0.5
+EDGE B10 B8 0.5
+EDGE B11 B5 0.6
+EDGE B3 B4 1
+EDGE B3 B5 0.5
+EDGE B5 B6 0.5
+EDGE B5 B7 0.5
+EDGE B6 B9 0.5
+
+ZONE C "Federal B Area"
+
+NODE C1 "Usman Memorial Hospital"
+NODE C2 "Karimabad"
+NODE C3 "Hussainabad"
+NODE C4 "Aisha Manzil"
+NODE C5 "Water pump chowrangi"
+NODE C6 "Mukka Chowk"
+NODE C7 "Dastagir"
+NODE C8 "Sohrab Goth"
+NODE C9 "Samna bad"
+NODE C10 "Gulberg"
+
+EDGE C1 C2 1
+EDGE C1 C3 1
+EDGE C10 C9 1
+EDGE C2 C4 3
+EDGE C4 C5 2
+EDGE C4 C6 2
+EDGE C5 C7 1.5
+EDGE C5 C8 4
+EDGE C5 C9 2
+EDGE C8 C9 3
+
+ZONE D "Light House"
+
+NODE D1 "Paper Market"
+NODE D2 "Karachi Metropolitan Co-operation"
+NODE D3 "Judia Bazaar"
+NODE D4 "Boltan Market"
+NODE D5 "I.I chundrigarh road"
+NODE D6 "Iqbal Centre"
+NODE D7 "S.M Govt Science College/ University"
+NODE D8 "Kharadar"
+NODE D9 "HBL Plaza"
+NODE D10 "Burns Road"
+NODE D11 "Tower"
+NODE D12 "City Station"
+NODE D13 "Tecno City"
+NODE D14 "Session Court"
+NODE D15 "Pakistan Stock Exchange"
+
+EDGE B1 D10 3
+EDGE B3 D5 2.5
+EDGE B4 D10 0.5
+EDGE B5 D10 1.5
+EDGE B5 D11 3
+EDGE B6 D2 2.7
+EDGE B9 D11 3
+EDGE D1 D10 1
+EDGE D1 D12 0.5
+EDGE D1 D2 0.1
+EDGE D1 D5 0.4
+EDGE D1 D7 0.7
+EDGE D10 D7 2
+EDGE D11 D14 1.5
+EDGE D11 D5 1
+EDGE D11 D6 0.5
+EDGE D12 D13 0.2
+EDGE D12 D15 0.4
+EDGE D12 D9 0.4
+EDGE D13 D5 0.4
+EDGE D14 D2 0.1
+EDGE D14 D6 1
+EDGE D15 D9 0.6
+EDGE D2 D3 0.2
+EDGE D2 D4 0.5
+EDGE D3 D4 0.3
+EDGE D3 D6 0.4
+EDGE D4 D5 0.2
+EDGE D4 D6 0.1
+EDGE D5 D7 0.2
+EDGE D5 D9 0.4
+EDGE D6 D8 0.3
+EDGE D7 D9 0.1
+
+ZONE E "Gulshan-E-Iqbal"
+
+NODE E1 "LuckyOne"
+NODE E2 "Imtiaz Spermarket"
+NODE E3 "Continental Bakery"
+NODE E4 "Practical Centre"
+NODE E5 "Sir Syed University"
+NODE E6 "Nipa"
+NODE E7 "Guslahan Chowrangi"
+NODE E8 "Bait-ul-Mukkaram Masjid"
+NODE E9 "Alladin"
+NODE E10 "Maskan"
+
+EDGE C1 E8 4
+EDGE C10 E2 3
+EDGE C5 E2 2
+EDGE C6 E4 2
+EDGE C7 E4 2
+EDGE E1 E2 1
+EDGE E1 E7 3
+EDGE E1 E9 4
+EDGE E10 E7 3
+EDGE E2 E6 3
+EDGE E2 E7 0.3
+EDGE E3 E4 0.5
+EDGE E3 E5 3
+EDGE E3 E7 1
+EDGE E5 E6 1
+EDGE E5 E8 3
+EDGE E7 E9 2
+
+ZONE F "Nazimabad"
+
+NODE F1 "Gol Market"
+NODE F2 "Eidgah Ground"
+NODE F3 "Chawla Market"
+NODE F4 "Abbasi Shaheed Hospital"
+NODE F5 "Khilafat Roundabout"
+NODE F6 "Imtiaz Mega"
+NODE F7 "Dilpasand sweets"
+NODE F8 "Victory Park"
+NODE F9 "Mehboob Star Lawn"
+NODE F10 "Urdu Bazaar"
+
+EDGE B1 F10 5
+EDGE E8 F2 7
+EDGE F1 F2 1.1
+EDGE F1 F5 1.3
+EDGE F10 F2 3.1
+EDGE F10 F3 0.7
+EDGE F10 F6 2.2
+EDGE F4 F5 0.7
+EDGE F4 F7 1.1
+EDGE F5 F7 1.4
+EDGE F6 F7 1.7
+EDGE F6 F8 0.7
+EDGE F8 F9 0.7
+
+ZONE G "Orangi Town"
+
+NODE G1 "Aligarh Market"
+NODE G2 "Orangi Town 10 Number"
+NODE G3 "Shadab Ground"
+NODE G4 "Bangla Bazar"
+NODE G5 "Disco Morr"
+NODE G6 "Kalandri Market"
+NODE G7 "Sindh Gov Old Qatar Hospital"
+NODE G8 "Graveyard 14-C"
+NODE G9 "Gabool Ladies Park"
+
+EDGE G1 G2 4
+EDGE G1 G3 3
+EDGE G2 G4 5
+EDGE G3 G4 2
+EDGE G4 G5 2
+EDGE G6 G8 3
+EDGE G6 G9 1
+EDGE G7 G9 4
+EDGE G8 G9 4
+
+ZONE H "Malir"
+
+NODE H1 "Nafsa School"
+NODE H2 "Mumtaz Hospital"
+NODE H3 "Malir Halt"
+NODE H4 "Shamsi Society"
+NODE H5 "Rizwan Bakers"
+NODE H6 "Usmania Masjid"
+NODE H7 "Rewafi Bakers"
+NODE H8 "Hafiz Sweets"
+NODE H9 "Bilal Town"
+NODE H10 "Millat Town"
+
+EDGE A1 H8 15
+EDGE B3 H3 16
+EDGE H1 H2 0.5
+EDGE H10 H9 0.3
+EDGE H2 H3 0.7
+EDGE H3 H4 0.4
+EDGE H3 H5 0.6
+EDGE H4 H5 0.6
+EDGE H4 H6 0.7
+EDGE H5 H6 0.1
+EDGE H5 H1 0.7
+EDGE H6 H7 0.8
+EDGE H7 H8 0.7
+EDGE H9 H7 1
+EDGE H9 H8 0.4
+
+ZONE I "North Nazimabad"
+
+NODE I1 "Five Star"
+NODE I2 "Hyderi"
+NODE I3 "Board Office"
+NODE I4 "Katti Pahari"
+NODE I5 "KDA Chowrangi"
+NODE I6 "Ziaduddin"
+NODE I7 "Asghar ali Shah Stadium"
+NODE I8 "Landhi Kotal"
+NODE I9 "Dental College"
+NODE I10 "Beconhouse"
+NODE I11 "Farooke Azam"
+
+EDGE C1 I6 2
+EDGE C4 I8 2.5
+EDGE F6 I3 0.5
+EDGE G1 I3 1
+EDGE I1 I2 1
+EDGE I1 I4 2.5
+EDGE I10 I2 1.5
+EDGE I10 I6 0.75
+EDGE I10 I8 0.75
+EDGE I11 I1 1
+EDGE I2 I4 1.8
+EDGE I4 I7 0.5
+EDGE I5 I2 1
+EDGE I5 I3 1.5
+EDGE I6 I5 1
+EDGE I7 I2 1.2
+EDGE I7 I5 1.5
+EDGE I8 I1 0.6
+EDGE I9 I8 0.5
+
+ZONE J "Shah Faisal Colony"
+
+NODE J1 "Block 2"
+NODE J2 "Shama Shopping Centre"
+NODE J3 "Shaukat Omer Hospital"
+NODE J4 "Block 3"
+NODE J5 "C-Centre"
+NODE J6 "A-One Chapli Kabab House"
+NODE J7 "Sadaat Colony"
+NODE J8 "Drigh Road Railway Station"
+NODE J9 "Block 1"
+NODE J10 "Block 4"
+NODE J11 "Block 5"
+NODE J12 "Kazmain Imambargah"
+
+EDGE A1 J8 23
+EDGE H3 J8 4
+EDGE H9 J1 3.2
+EDGE J1 J10 1.3
+EDGE J1 J2 0.2
+EDGE J1 J4 0.5
+EDGE J1 J9 1
+EDGE J10 J11 1.1
+EDGE J10 J12 1.3
+EDGE J10 J6 0.8
+EDGE J10 J7 2.1
+EDGE J10 J9 0.2
+EDGE J11 J12 0.2
+EDGE J11 J7 2.5
+EDGE J11 J8 2.5
+EDGE J12 J7 2.7
+EDGE J2 J3 0.7
+EDGE J2 J6 1.2
+EDGE J3 J4 0.6
+EDGE J3 J5 0.5
+EDGE J4 J5 1.2
+EDGE J6 J8 2.1
+EDGE J6 J9 0.6
+EDGE J7 J8 2.1
+EDGE J7 J9 1.9
+
+ZONE K "Clifton"
+
+NODE K1 "Freer Hall"
+NODE K2 "Cantt Station"
+NODE K3 "Teen Talwar"
+NODE K4 "Ocean Mall"
+NODE K5 "Boat Basin"
+NODE K6 "Do Talwar"
+NODE K7 "Bilawal Chowrangi"
+NODE K8 "Abdullah Sah Ghazi Mazaar"
+NODE K9 "Khadda Market"
+NODE K10 "Dolmen Mall"
+NODE K11 "Sea view"
+NODE K12 "Clock Tower"
+
+EDGE B8 K2 6.6
+EDGE B9 K2 4.2
+EDGE H3 K10 22
+EDGE K5 K10 4.1
+EDGE K6 K12 3.5
+EDGE K7 K10 2.5
+EDGE K8 K10 2.5
+EDGE K9 K10 2.5
+EDGE K1 K2 1.5
+EDGE K1 K3 2
+EDGE K1 K4 2.1
+EDGE K1 K5 3.5
+EDGE K1 K6 2.5
+EDGE K1 K7 4.7
+EDGE K1 K8 7
+EDGE K10 K11 2
+EDGE K10 K12 3.5
+EDGE K10 K3 4.9
+EDGE K10 K4 3.6
+EDGE K11 K12 2.5
+EDGE K11 K7 3
+EDGE K11 K8 2.5
+EDGE K11 K9 2.5
+EDGE K12 K7 4.5
+EDGE K12 K8 3.5
+EDGE K12 K9 3.5
+EDGE K2 K3 2
+EDGE K2 K4 2.8
+EDGE K2 K5 2.8
+EDGE K2 K6 3.2
+EDGE K2 K7 5.4
+EDGE K3 K4 1.3
+EDGE K3 K5 2.5
+EDGE K3 K6 1.6
+EDGE K3 K7 3.8
+EDGE K3 K8 4.2
+EDGE K3 K9 3.4
+EDGE K4 K5 2.1
+EDGE K4 K6 0.4
+EDGE K4 K7 2.6
+EDGE K4 K8 2.9
+EDGE K4 K9 4.5
+EDGE K5 K6 1.8
+EDGE K5 K7 1.8
+EDGE K5 K8 3.6
+EDGE K5 K9 4.5
+EDGE K6 K7 2.4
+EDGE K6 K8 2.7
+EDGE K6 K9 2.3
+EDGE K7 K8 3
+EDGE K7 K9 3.2
+EDGE K8 K9 3
+
+ZONE L "Gulistan-e-Johar"
+
+NODE L1 "Johar Mor"
+NODE L2 "Baochistan Sajji"
+NODE L3 "Johar Chowrangi"
+NODE L4 "Habib University"
+NODE L5 "University Road"
+NODE L6 "Bin Hashim Mart"
+NODE L7 "Kamran Chowrangi"
+
+EDGE E6 L5 1
+EDGE E8 L3 4
+EDGE E8 L5 1
+EDGE E9 L1 2
+EDGE H1 L7 4
+EDGE I2 L7 5
+EDGE J8 L1 4
+EDGE J9 L4 5.5
+EDGE K3 L1 4
+EDGE K7 L3 4
+EDGE K8 L2 5
+EDGE L1 L2 0.5
+EDGE L2 L3 1.3
+EDGE L3 L4 1.8
+EDGE L3 L5 2.2
+EDGE L3 L6 1.4
+EDGE L6 L7 1.3
+
+ZONE M "Sohrab Goth"
+
+NODE M1 "Al-Asif Square"
+NODE M2 "Sohrab Goth Bus Stop"
+NODE M3 "Karachi Bus Terminal"
+NODE M4 "Gulzar-e-Hijri"
+NODE M5 "Kaneez Fatima Society"
+NODE M6 "Paradise Bakery / Abbas Town"
+NODE M7 "Suchchal Goth"
+NODE M8 "Ojha Institute / Hospital"
+NODE M9 "ezzi homes"
+NODE M10 "kababjees"
+
+EDGE C8 M2 0.1
+EDGE M1 M2 6
+EDGE M1 M3 1.5
+EDGE M10 M2 5
+EDGE M10 M9 1
+EDGE M2 M4 2.0
+EDGE M3 M5 2.5
+EDGE M4 M6 3.0
+EDGE M5 M6 1.5
+EDGE M6 M7 2.0
+EDGE M7 M8 1.5
+
+ZONE N "Korangi"
+
+NODE N1 "Korangi 5"
+NODE N2 "Coast Guard"
+NODE N3 "Driving License Sindh"
+NODE N4 "Korangi 4 Block"
+NODE N5 "Mehran Town"
+NODE N6 "korangi 2 Block"
+NODE N7 "Nasir Jump"
+NODE N8 "Crossing"
+NODE N9 "Industrial Area"
+NODE N10 "Brooks Chowrangi"
+NODE N11 "Zaman Town"
+NODE N12 "Bagh-e-Korangi"
+NODE N13 "Korangi 1"
+
+EDGE J1 N12 5
+EDGE K3 N9 10
+EDGE N1 N2 3.1
+EDGE N1 N4 1.9
+EDGE N10 N5 2.7
+EDGE N10 N7 2.6
+EDGE N10 N9 2.5
+EDGE N11 N12 4.6
+EDGE N11 N2 2.6
+EDGE N11 N4 1
+EDGE N13 N3 1
+EDGE N13 N6 0.9
+EDGE N13 N9 3.1
+EDGE N2 N4 3
+EDGE N3 N5 3.9
+EDGE N4 N7 3.6
+EDGE N5 N7 2.1
+EDGE N5 N9 0.3
+EDGE N7 N8 3.1
+

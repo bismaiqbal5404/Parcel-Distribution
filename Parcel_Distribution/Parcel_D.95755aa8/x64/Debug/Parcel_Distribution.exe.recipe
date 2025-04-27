@@ -2,7 +2,11 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
+<<<<<<< HEAD
       <FullPath>C:\Users\Mahnoor Zahra\source\repos\Parcel-Distribution\Parcel_Distribution\x64\Debug\Parcel_Distribution.exe</FullPath>
+=======
+      <FullPath>D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\x64\Debug\Parcel_Distribution.exe</FullPath>
+>>>>>>> origin/main
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

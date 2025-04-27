@@ -5,6 +5,7 @@
 #include<sstream> // for string to number conversion 
 #include <fstream>
 #include <iomanip> 
+#include "Rider.h"
 using namespace std;
 
 string username, fileName, password;
@@ -227,7 +228,8 @@ bool loginUser()
 				}
 				else if (role == "rider") {
 					cout << "\n\tWelcome, rider " << userInfo.username << "!" << endl;
-					// add rider menu here
+					Rider rider(userInfo.username, userInfo.password, userInfo.role);
+					rider.riderMenu();
 				}
 
 				return true;
@@ -263,7 +265,7 @@ bool startsWithLetters(const string& str) {
 }
 
 
-//void main() {
-//	int log = welcome(); // user selects an option i.e Login / signup 
-//	menu1(log);
-//}
+void main() {
+	int log = welcome(); // user selects an option i.e Login / signup 
+	menu1(log);
+}

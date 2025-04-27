@@ -123,20 +123,20 @@ static unordered_map<Node*, double> dijkstra(int V ,string sourceCode, Graph G) 
 	return dist;
 }
 
-void main() {
-	string fileName = "routes.txt";
-	Graph G;
-	loadGraphFromFile(fileName, G);
+//void main() {
+	//string fileName = "routes.txt";
+	//Graph G;
+	//loadGraphFromFile(fileName, G);
 
-	cout << "Nodes Loaded: " << G.nodesByCode.size() << endl;
-	cout << "Zones loaded: " << G.zonesById.size() << endl;
+	//cout << "Nodes Loaded: " << G.nodesByCode.size() << endl;
+	//cout << "Zones loaded: " << G.zonesById.size() << endl;
 
-	//for (auto& pair : G.nodesByCode) {
-	//	Node* n = pair.second;
-	//	cout << n->code << " ( " << n->areaName << ") " << n->neighbors.size() << " neighbors\n";
-	//}
-	unordered_map<Node*, double> result = dijkstra(G.nodesByCode.size(), "A1", G);
-	for (auto& dist : result)
-		cout << "The distance from A1 to " << dist.first->code << " is " << dist.second << " " << endl;
+	////for (auto& pair : G.nodesByCode) {
+	////	Node* n = pair.second;
+	////	cout << n->code << " ( " << n->areaName << ") " << n->neighbors.size() << " neighbors\n";
+	////}
+	//unordered_map<Node*, double> result = dijkstra(G.nodesByCode.size(), "A1", G);
+	//for (auto& dist : result)
+	//	cout << "The distance from A1 to " << dist.first->code << " is " << dist.second << " " << endl;
 
-}
+//}

@@ -1,2 +1,59 @@
+<<<<<<< HEAD
 .vs/
 .vs/
+=======
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Bb]in/
+[Oo]bj/
+*.exe
+*.ilk
+*.log
+*.pch
+*.pdb
+*.idb
+
+# Compiled source
+*.dll
+*.lib
+*.bsc
+
+# VS-specific folders
+.vs/
+ipch/
+
+# Others
+*.opensdf
+*.sdf
+*.cache
+*.ncb
+*.suo
+*.VC.db
+
+# Backup & temp files
+*.bak
+*.tmp
+*.old
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Ignore generated files
+*.aps
+*.sbr
+*.tlog
+
+# Don't ignore these
+!*.cpp
+!*.h
+!*.hpp
+!*.sln
+!*.vcxproj
+!*.vcxproj.filters
+>>>>>>> da8351745ca68f32a6aa73fcbee89ac2cf289210

@@ -1,4 +1,4 @@
 ﻿  graph.cpp
-D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\graph.cpp(126,6): warning C4326: return type of 'main' should be 'int' instead of 'void'
-D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\graph.cpp(138,67): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\graph.cpp(267,6): warning C4326: return type of 'main' should be 'int' instead of 'void'
+D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\graph.cpp(279,67): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
   Parcel_Distribution.vcxproj -> D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\x64\Debug\Parcel_Distribution.exe

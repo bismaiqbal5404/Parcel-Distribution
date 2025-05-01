@@ -24,6 +24,138 @@ struct Graph {
 	unordered_map<string, Zone*> zonesById;
 };
 
+class MinHeap {
+	pair<double, Node*>* harr;
+	int capacity;
+public:
+	int heap_size;
+	unordered_map<Node*, int> nodePos; // maps Node* to its index in harr
+	//Constructor
+	MinHeap(int capacity);
+
+	//to heapify a subtree with the root at given index
+	void MinHeapify(int i);
+
+	int parent(int i) {
+		return (i - 1) / 2;
+	}
+
+	int left(int i) {
+		return (2 * i + 1);
+	}
+
+	int right(int i) {
+		return (2 * i + 2);
+	}
+
+	pair<double, Node*> extractMin();
+
+	void decreaseKey(int i, pair<double, Node*> new_val);
+	
+	pair<double, Node*> getMin() {
+		return harr[0];
+	}
+
+	void deleteKey(int i);
+
+	void insertKey(pair<double, Node*> k);
+
+	bool isEmpty() const {
+		return heap_size == 0;
+	}
+
+private:
+	void heapSwap(int i, int j); // helper for swapping with position tracking
+};
+
+MinHeap::MinHeap(int cap) {
+	heap_size = 0;
+	capacity = cap;
+	harr = new pair<double, Node*>[cap];
+}
+
+// swapping node positions with swapping in heap as well
+void MinHeap::heapSwap(int i, int j) {
+	swap(harr[i], harr[j]);
+	nodePos[harr[i].second] = i;
+	nodePos[harr[j].second] = j;
+}
+
+// inserts a new key k
+void MinHeap::insertKey(pair<double, Node*> k) {
+	if (heap_size == capacity) {
+		cout << "\nOverflow: Could not insertKey\n";
+		return;
+	}
+
+	//first insert the new key at the end
+	int i = heap_size++;
+	harr[i] = k;
+	nodePos[k.second] = i;
+
+	// Fix the min heap property if is is violated
+	while (i != 0 && harr[parent(i)].first > harr[i].first) {
+		heapSwap(i, parent(i));
+		i = parent(i);
+	}
+}
+
+//Decreases value of key at index 'i' to new_val. It is assumed that
+// new_val is smaller harr[i]
+void MinHeap::decreaseKey(int i, pair<double, Node*> new_val) {
+	harr[i] = new_val;
+	nodePos[new_val.second] = i;
+	while (i != 0 && harr[parent(i)].first > harr[i].first) {
+		heapSwap(i, parent(i));
+		i = parent(i);
+	}
+}
+
+// Method to remove minimum element (or root) from min heap
+pair<double, Node*> MinHeap::extractMin() {
+	if (heap_size <= 0)
+		return { DBL_MAX, nullptr };
+	if (heap_size == 1) {
+		heap_size--;
+		nodePos.erase(harr[0].second);
+		return harr[0];
+	}
+
+	// store the minimum value, and remove it from heap
+	pair<double, Node*> root = harr[0];
+	harr[0] = harr[heap_size - 1];
+	nodePos[harr[0].second] = 0;
+	heap_size--;
+	MinHeapify(0);
+	nodePos.erase(root.second);
+
+	return root;
+}
+
+// This function deletes key at index i. It first reduced value to minus
+// infinity then calls extract min()
+void MinHeap::deleteKey(int i) {
+	decreaseKey(i, {DBL_MIN, harr[i].second});
+	extractMin();
+}
+
+// A recursive method to heapify a subtree with the root at given index
+// This method assumes that the subtrees are already heapified
+void MinHeap::MinHeapify(int i) {
+	int l = left(i);
+	int r = right(i);
+	int smallest = i;
+	if (l < heap_size && harr[l].first < harr[i].first)
+		smallest = l;
+	if (r < heap_size && harr[r].first < harr[smallest].first)
+		smallest = r;
+	if (smallest != i) {
+		heapSwap(i, smallest);
+		MinHeapify(smallest);
+	}
+}
+
+
 static string trim(const string& s) {
 	int start = 0;
 	int end = static_cast<int>(s.size()) - 1;
@@ -96,18 +228,19 @@ void loadGraphFromFile(const string& path, Graph& G) {
 }
 
 static unordered_map<Node*, double> dijkstra(int V ,string sourceCode, Graph G) {
-	priority_queue<pair<double, Node*>, vector<pair<double, Node*>>, greater<pair<double, Node*>>> pq;
+	MinHeap pq(V);
 
 	unordered_map<Node*, double> dist;
 
 	Node* src = G.nodesByCode[sourceCode];
-	pq.push({ 0.0, src });
 	dist[src] = 0.0;
+	pq.insertKey({ 0.0, src });
+	pq.nodePos[src] = 0;
 
-	while (!pq.empty()) {
-		Node* u = pq.top().second;
-		double currentDist = pq.top().first;
-		pq.pop();
+	while (!pq.isEmpty()) {
+		pair<double, Node*> top = pq.extractMin();
+		Node* u = top.second;
+		double currentDist = top.first;
 
 		for (auto& neighbor : u->neighbors) {
 			Node* nextNode = neighbor.first;
@@ -116,7 +249,15 @@ static unordered_map<Node*, double> dijkstra(int V ,string sourceCode, Graph G) 
 
 			if (!dist.count(nextNode) || dist[nextNode] > newDist) {
 				dist[nextNode] = newDist;
-				pq.push({ newDist, nextNode });
+
+				if (pq.nodePos.find(nextNode) != pq.nodePos.end()) {
+					int idx = pq.nodePos[nextNode];
+					pq.decreaseKey(idx, { newDist, nextNode });
+				}
+				else {
+					pq.insertKey({ newDist, nextNode });
+					pq.nodePos[nextNode] = pq.heap_size - 1;
+				}
 			}
 		}
 	}
@@ -136,7 +277,11 @@ void main() {
 	//	cout << n->code << " ( " << n->areaName << ") " << n->neighbors.size() << " neighbors\n";
 	//}
 	unordered_map<Node*, double> result = dijkstra(G.nodesByCode.size(), "A1", G);
-	for (auto& dist : result)
+	int count = 0;
+	for (auto& dist : result) {
 		cout << "The distance from A1 to " << dist.first->code << " is " << dist.second << " " << endl;
+		count++;
+	}
+	cout << "The count is : " << count << endl;
 
 }

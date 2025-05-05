@@ -127,6 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="customer.cpp" />
     <ClCompile Include="graph.cpp" />
     <ClCompile Include="Rider.cpp" />
     <ClCompile Include="source.cpp" />

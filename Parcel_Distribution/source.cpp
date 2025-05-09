@@ -332,6 +332,13 @@ int main() {
 	return 0;
 }
 
+
+int main() {
+	int log = welcome(); // user selects an option i.e Login / signup 
+	menu1(log);
+	return 0;
+}
+
 // function to set color 
 void color(int color) {
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);

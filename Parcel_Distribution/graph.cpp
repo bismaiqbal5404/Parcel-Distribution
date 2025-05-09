@@ -227,10 +227,11 @@ void loadGraphFromFile(const string& path, Graph& G) {
 	}
 }
 
-static unordered_map<Node*, double> dijkstra(int V ,string sourceCode, Graph G) {
+static pair<unordered_map<Node*, double>, unordered_map<Node*, Node*>> dijkstra(int V ,string sourceCode, Graph G) {
 	MinHeap pq(V);
 
 	unordered_map<Node*, double> dist;
+	unordered_map<Node*, Node*> prev;
 
 	Node* src = G.nodesByCode[sourceCode];
 	dist[src] = 0.0;
@@ -249,6 +250,7 @@ static unordered_map<Node*, double> dijkstra(int V ,string sourceCode, Graph G) 
 
 			if (!dist.count(nextNode) || dist[nextNode] > newDist) {
 				dist[nextNode] = newDist;
+				prev[nextNode] = u;
 
 				if (pq.nodePos.find(nextNode) != pq.nodePos.end()) {
 					int idx = pq.nodePos[nextNode];
@@ -261,14 +263,24 @@ static unordered_map<Node*, double> dijkstra(int V ,string sourceCode, Graph G) 
 			}
 		}
 	}
-	return dist;
+	return { dist, prev };
+}
+
+vector<Node*> reconstructPath(Node* destination, unordered_map<Node*, Node*>& prev) {
+	vector<Node*> path;
+	for (Node* at = destination; at != nullptr; at = prev[at]) {
+		path.push_back(at);
+	}
+	reverse(path.begin(), path.end());
+	return path;
 }
 
 void main() {
 	string fileName = "routes.txt";
 	Graph G;
 	loadGraphFromFile(fileName, G);
-	vector <pair<string, unordered_map<Node*, double>>> allShortestPaths;
+	unordered_map<string, pair<unordered_map<Node*, double>, unordered_map<Node*, Node*>>> allShortestPaths;
+
 
 	cout << "Nodes Loaded: " << G.nodesByCode.size() << endl;
 	cout << "Zones loaded: " << G.zonesById.size() << endl;
@@ -276,8 +288,8 @@ void main() {
 	for (auto& pair : G.nodesByCode) {
 		Node* n = pair.second;
 		//cout << n->code << " ( " << n->areaName << ") " << n->neighbors.size() << " neighbors\n";
-		unordered_map<Node*, double> result = dijkstra(G.nodesByCode.size(), n->code, G);
-		allShortestPaths.emplace_back(n->code, result);
+		auto result = dijkstra(G.nodesByCode.size(), n->code, G);
+		allShortestPaths[n->code] = result;
 	}
 	//unordered_map<Node*, double> result = dijkstra(G.nodesByCode.size(), "A1", G);
 	int count = 0;
@@ -296,24 +308,34 @@ void main() {
 		string n1, n2;
 		bool exists;
 		Node* dest;
+		vector<Node*> path;
 		switch (choice) {
 		case 1: 
 			cout << "Enter the code of the first Node: " << endl;
 			getline(cin, n1);
 			cout << "Enter the code of the second Node: " << endl;
 			getline(cin, n2);
+			if (G.nodesByCode.find(n1) == G.nodesByCode.end() || G.nodesByCode.find(n2) == G.nodesByCode.end()) {
+				cout << "One or both node codes do not exist." << endl;
+				break;
+			}
 			dest = G.nodesByCode[n2];
 			exists = false;
-			for (auto a : allShortestPaths) {
-				if (n1 == a.first) {
-					for (auto b : a.second) {
-						if (b.first == dest) {
-							exists = true;
-							cout << "The minimum distance from " << n1 << " to " << n2 << " is: " << b.second << endl;
-						}
+			if (allShortestPaths.find(n1) != allShortestPaths.end()) {
+				pair<unordered_map<Node*, double>, unordered_map<Node*, Node*>> path1 = allShortestPaths[n1];
+				if (path1.first.find(dest) != path1.first.end()) {
+					exists = true;
+					cout << "The minimum distance from " << n1 << " to " << n2 << " is: " << path1.first[dest] << endl;
+					path = reconstructPath(dest, path1.second);
+
+					cout << "Path: ";
+					for (Node* node : path) {
+						cout << node->code << " ";
 					}
+					cout << endl;
 				}
 			}
+
 			if (!exists) {
 				cout << "There doesn't exist a path from " << n1 << " to " << n2 << endl;
 			}

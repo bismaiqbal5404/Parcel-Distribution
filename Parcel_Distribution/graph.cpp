@@ -268,20 +268,63 @@ void main() {
 	string fileName = "routes.txt";
 	Graph G;
 	loadGraphFromFile(fileName, G);
+	vector <pair<string, unordered_map<Node*, double>>> allShortestPaths;
 
 	cout << "Nodes Loaded: " << G.nodesByCode.size() << endl;
 	cout << "Zones loaded: " << G.zonesById.size() << endl;
 
-	//for (auto& pair : G.nodesByCode) {
-	//	Node* n = pair.second;
-	//	cout << n->code << " ( " << n->areaName << ") " << n->neighbors.size() << " neighbors\n";
-	//}
-	unordered_map<Node*, double> result = dijkstra(G.nodesByCode.size(), "A1", G);
+	for (auto& pair : G.nodesByCode) {
+		Node* n = pair.second;
+		//cout << n->code << " ( " << n->areaName << ") " << n->neighbors.size() << " neighbors\n";
+		unordered_map<Node*, double> result = dijkstra(G.nodesByCode.size(), n->code, G);
+		allShortestPaths.emplace_back(n->code, result);
+	}
+	//unordered_map<Node*, double> result = dijkstra(G.nodesByCode.size(), "A1", G);
 	int count = 0;
-	for (auto& dist : result) {
+	/*for (auto& dist : result) {
 		cout << "The distance from A1 to " << dist.first->code << " is " << dist.second << " " << endl;
 		count++;
+	}*/
+	//cout << "The count is : " << count << endl;
+	bool cont = true;
+	while (cont) {
+		cout << "1. find shortest path between two nodes" << endl;
+		cout << "2. Exit"<< endl;
+		int choice;
+		cin >> choice;
+		cin.ignore();
+		string n1, n2;
+		bool exists;
+		Node* dest;
+		switch (choice) {
+		case 1: 
+			cout << "Enter the code of the first Node: " << endl;
+			getline(cin, n1);
+			cout << "Enter the code of the second Node: " << endl;
+			getline(cin, n2);
+			dest = G.nodesByCode[n2];
+			exists = false;
+			for (auto a : allShortestPaths) {
+				if (n1 == a.first) {
+					for (auto b : a.second) {
+						if (b.first == dest) {
+							exists = true;
+							cout << "The minimum distance from " << n1 << " to " << n2 << " is: " << b.second << endl;
+						}
+					}
+				}
+			}
+			if (!exists) {
+				cout << "There doesn't exist a path from " << n1 << " to " << n2 << endl;
+			}
+			break;
+		case 2:
+			cont = false;
+			break;
+		default:
+			break;
+		}
 	}
-	cout << "The count is : " << count << endl;
+	
 
 }

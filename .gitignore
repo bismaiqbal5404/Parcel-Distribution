@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-.vs/
-.vs/
-=======
 # User-specific files
 *.suo
 *.user
@@ -56,4 +52,3 @@ Thumbs.db
 !*.sln
 !*.vcxproj
 !*.vcxproj.filters
->>>>>>> da8351745ca68f32a6aa73fcbee89ac2cf289210

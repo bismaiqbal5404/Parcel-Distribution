@@ -275,78 +275,78 @@ vector<Node*> reconstructPath(Node* destination, unordered_map<Node*, Node*>& pr
 	return path;
 }
 
-void main() {
-	string fileName = "routes.txt";
-	Graph G;
-	loadGraphFromFile(fileName, G);
-	unordered_map<string, pair<unordered_map<Node*, double>, unordered_map<Node*, Node*>>> allShortestPaths;
-
-
-	cout << "Nodes Loaded: " << G.nodesByCode.size() << endl;
-	cout << "Zones loaded: " << G.zonesById.size() << endl;
-
-	for (auto& pair : G.nodesByCode) {
-		Node* n = pair.second;
-		//cout << n->code << " ( " << n->areaName << ") " << n->neighbors.size() << " neighbors\n";
-		auto result = dijkstra(G.nodesByCode.size(), n->code, G);
-		allShortestPaths[n->code] = result;
-	}
-	//unordered_map<Node*, double> result = dijkstra(G.nodesByCode.size(), "A1", G);
-	int count = 0;
-	/*for (auto& dist : result) {
-		cout << "The distance from A1 to " << dist.first->code << " is " << dist.second << " " << endl;
-		count++;
-	}*/
-	//cout << "The count is : " << count << endl;
-	bool cont = true;
-	while (cont) {
-		cout << "1. find shortest path between two nodes" << endl;
-		cout << "2. Exit"<< endl;
-		int choice;
-		cin >> choice;
-		cin.ignore();
-		string n1, n2;
-		bool exists;
-		Node* dest;
-		vector<Node*> path;
-		switch (choice) {
-		case 1: 
-			cout << "Enter the code of the first Node: " << endl;
-			getline(cin, n1);
-			cout << "Enter the code of the second Node: " << endl;
-			getline(cin, n2);
-			if (G.nodesByCode.find(n1) == G.nodesByCode.end() || G.nodesByCode.find(n2) == G.nodesByCode.end()) {
-				cout << "One or both node codes do not exist." << endl;
-				break;
-			}
-			dest = G.nodesByCode[n2];
-			exists = false;
-			if (allShortestPaths.find(n1) != allShortestPaths.end()) {
-				pair<unordered_map<Node*, double>, unordered_map<Node*, Node*>> path1 = allShortestPaths[n1];
-				if (path1.first.find(dest) != path1.first.end()) {                                                                                                                                                                                                            
-					exists = true;
-					cout << "The minimum distance from " << n1 << " to " << n2 << " is: " << path1.first[dest] << endl;
-					path = reconstructPath(dest, path1.second);
-
-					cout << "Path: ";
-					for (Node* node : path) {
-						cout << node->code << " ";
-					}
-					cout << endl;
-				}
-			}
-
-			if (!exists) {
-				cout << "There doesn't exist a path from " << n1 << " to " << n2 << endl;
-			}
-			break;
-		case 2:
-			cont = false;
-			break;
-		default:
-			break;
-		}
-	}
-	
-
-}
+//void main() {
+//	string fileName = "routes.txt";
+//	Graph G;
+//	loadGraphFromFile(fileName, G);
+//	unordered_map<string, pair<unordered_map<Node*, double>, unordered_map<Node*, Node*>>> allShortestPaths;
+//
+//
+//	cout << "Nodes Loaded: " << G.nodesByCode.size() << endl;
+//	cout << "Zones loaded: " << G.zonesById.size() << endl;
+//
+//	for (auto& pair : G.nodesByCode) {
+//		Node* n = pair.second;
+//		//cout << n->code << " ( " << n->areaName << ") " << n->neighbors.size() << " neighbors\n";
+//		auto result = dijkstra(G.nodesByCode.size(), n->code, G);
+//		allShortestPaths[n->code] = result;
+//	}
+//	//unordered_map<Node*, double> result = dijkstra(G.nodesByCode.size(), "A1", G);
+//	int count = 0;
+//	/*for (auto& dist : result) {
+//		cout << "The distance from A1 to " << dist.first->code << " is " << dist.second << " " << endl;
+//		count++;
+//	}*/
+//	//cout << "The count is : " << count << endl;
+//	bool cont = true;
+//	while (cont) {
+//		cout << "1. find shortest path between two nodes" << endl;
+//		cout << "2. Exit"<< endl;
+//		int choice;
+//		cin >> choice;
+//		cin.ignore();
+//		string n1, n2;
+//		bool exists;
+//		Node* dest;
+//		vector<Node*> path;
+//		switch (choice) {
+//		case 1: 
+//			cout << "Enter the code of the first Node: " << endl;
+//			getline(cin, n1);
+//			cout << "Enter the code of the second Node: " << endl;
+//			getline(cin, n2);
+//			if (G.nodesByCode.find(n1) == G.nodesByCode.end() || G.nodesByCode.find(n2) == G.nodesByCode.end()) {
+//				cout << "One or both node codes do not exist." << endl;
+//				break;
+//			}
+//			dest = G.nodesByCode[n2];
+//			exists = false;
+//			if (allShortestPaths.find(n1) != allShortestPaths.end()) {
+//				pair<unordered_map<Node*, double>, unordered_map<Node*, Node*>> path1 = allShortestPaths[n1];
+//				if (path1.first.find(dest) != path1.first.end()) {                                                                                                                                                                                                            
+//					exists = true;
+//					cout << "The minimum distance from " << n1 << " to " << n2 << " is: " << path1.first[dest] << endl;
+//					path = reconstructPath(dest, path1.second);
+//
+//					cout << "Path: ";
+//					for (Node* node : path) {
+//						cout << node->code << " ";
+//					}
+//					cout << endl;
+//				}
+//			}
+//
+//			if (!exists) {
+//				cout << "There doesn't exist a path from " << n1 << " to " << n2 << endl;
+//			}
+//			break;
+//		case 2:
+//			cont = false;
+//			break;
+//		default:
+//			break;
+//		}
+//	}
+//	
+//
+//}

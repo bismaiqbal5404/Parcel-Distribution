@@ -2,7 +2,11 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
+<<<<<<< HEAD
       <FullPath>D:\Abbas\Uni\sem3\DSA_Project\Parcel-Distribution\Parcel_Distribution\x64\Debug\Parcel_Distribution.exe</FullPath>
+=======
+      <FullPath>C:\Users\BISMA\source\repos\Parcel-Distribution\DSA-Parcel_Distribution\Parcel_Distribution\x64\Debug\Parcel_Distribution.exe</FullPath>
+>>>>>>> bb9212c252f4bec67a977558a7e5f008083ab2c4
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

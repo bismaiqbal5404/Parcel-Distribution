@@ -323,7 +323,7 @@ void main() {
 			exists = false;
 			if (allShortestPaths.find(n1) != allShortestPaths.end()) {
 				pair<unordered_map<Node*, double>, unordered_map<Node*, Node*>> path1 = allShortestPaths[n1];
-				if (path1.first.find(dest) != path1.first.end()) {
+				if (path1.first.find(dest) != path1.first.end()) {                                                                                                                                                                                                            
 					exists = true;
 					cout << "The minimum distance from " << n1 << " to " << n2 << " is: " << path1.first[dest] << endl;
 					path = reconstructPath(dest, path1.second);

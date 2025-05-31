@@ -1,5 +1,3 @@
-﻿  source.cpp
-D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\source.cpp(326,44): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\source.cpp(518,9): warning C4101: 'i': unreferenced local variable
-D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\source.cpp(560,1): warning C4715: 'loginUser': not all control paths return a value
+﻿  nearestNeighbor.cpp
+D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\nearestNeighbor.cpp(1113,44): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
   Parcel_Distribution.vcxproj -> D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\x64\Debug\Parcel_Distribution.exe

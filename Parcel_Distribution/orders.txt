@@ -1,1 +1,4 @@
-01,abbas,12,E,E2,F,F2,45,luggage,Placed
+001,abbas,12345,H,H8,F,F6,12,gift,Delivered
+002,abbas,12345,C,C4,L,L1,3,docs,Delivered
+003,abbas,12345,E,E5,I,I3,1,clothes,Delivered
+004,abbas,12345,B,B10,N,N6,157,electronics,Delivered

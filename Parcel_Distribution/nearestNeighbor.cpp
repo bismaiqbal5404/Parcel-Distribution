@@ -9,6 +9,7 @@
 #include <iomanip> 
 #include<cctype>
 #include<algorithm>
+#include<limits>
 #include<float.h>
 using namespace std;
 
@@ -54,13 +55,38 @@ struct Order {
 vector<Order> orders;
 
 string username, fileName, password;
-string driverLoc = "A1";
+//string driverLoc = "A1";
 int T_pickup = 10;
 int T_dropoff = 7;
 // assuming the rider starts at 10 AM for delivery
 // time is in minutes after midnight
 int currentTime = (10 * 60);
 double avgSpeed = 40.0; // speed in km/h
+
+unordered_map<string, string> riderHomeDepot;
+unordered_map<string, string> riderCurrentLoc;
+
+void loadRiderDepots(const string& path = "riderDepots.txt") {
+	ifstream in(path);
+	if (!in.is_open()) {
+		cout << "Warning: Could not open " << path
+			<< " (using default depot for everyone).\n";
+		return;
+	}
+	string user, depot;
+	while (in >> user >> depot) {
+		riderHomeDepot[user] = depot;
+	}
+	in.close();
+}
+
+string getHomeDepotFor(const string& riderUsername) {
+	auto it = riderHomeDepot.find(riderUsername);
+	if (it == riderHomeDepot.end()) {
+		return "A1";
+	}
+	return it->second;
+}
 
 // function declarations
 void gotoxy(int x, int y);
@@ -75,6 +101,7 @@ bool menu1(int choose);
 void startDelivery(string loc, double capacity);
 void viewAssignedOrders();
 void loadOrdersFromFile();
+vector<Node*> computeSingleRiderRoute(const string& startCode, const vector<int>& placedIndices, double capacity);
 
 class MinHeap {
 	pair<double, Node*>* harr;
@@ -825,7 +852,7 @@ void placeNewOrder() {
 		newOrder.hasHardDeadline = true;
 		cout << "Enter deadline time in hours (0–23) and minutes (0–59): ";
 		int hr, mn;
-		scanf("%d %d", &hr, &mn);
+		cin >> hr >> mn;
 		newOrder.deadlineTime = hr * 60 + mn;  // store as minutes since midnight
 	}
 	else {
@@ -941,44 +968,35 @@ void customerMenu() {
 	} while (choice != 5);
 }
 
-void riderMenu() {
-	int choice;
-	do {
-		cout << "\n======= Rider Menu =======\n";
-		cout << "1. View Available Orders\n";
-		cout << "2. Start Delivery\n";
-		cout << "3. Logout\n";
-		cout << "Enter your choice: ";
-		cin >> choice;
-		cin.ignore();
+vector<int> collectPlacedOrders() {
+	loadOrdersFromFile(); // load orders from file
+	vector<int> placed;
+	for (int i = 0; i < (int)orders.size(); i++) {
+		if (orders[i].status == "Placed") {
+			placed.push_back(i);
+		}
+	}
+	return placed;
+}
 
-		switch (choice) {
-		case 1:
-			viewAssignedOrders();
-			break;
-		case 2:
-		{
-			cout << "Select your vehicle type:\n"
-				<< "1. Bike (max 10 kg)\n"
-				<< "2. Car (max 50 kg)\n"
-				<< "3. Truck (max 200 kg)\n";
-			int choice; cin >> choice;
-			double capacity = (choice == 1 ? 10.0 : choice == 2 ? 50.0 : 200.0);
-			/*string loc = "A1";*/
-			startDelivery(driverLoc, capacity);
-			break;
+// function to count no of riders
+vector<string> getRiders() {
+	string u, p, role;
+	vector<string> riders;
+
+	ifstream inFile("users.txt");
+	if (inFile.is_open()) {
+		while (inFile >> u >> p >> role) {
+			if (role == "rider") {
+				riders.push_back(u);
+			}
 		}
-		case 3:
-		{
-			system("cls");
-			int log = welcome();
-			menu1(log);
-			return; // Exit the menu loop
-		}
-		default:
-			cout << "Invalid choice. Try again.\n";
-		}
-	} while (choice != 3);
+		inFile.close();
+	}
+	else {
+		cout << "\tError: Unable to open file for login." << endl;
+	}
+	return riders;
 }
 
 // gets distance between any two nodes
@@ -988,6 +1006,145 @@ double getDistanceBetweenNodes(Node* A, Node* B) {
 		return DBL_MAX;
 	}
 	return spInfo[B];
+}
+
+void riderDispatchAll() {
+	vector<string> riders = getRiders();
+	int K = (int)riders.size();
+	if (K == 0) {
+		cout << "No riders found! Please register at least one rider first.\n";
+		return;
+	}
+	if (K > 5) {
+		cout << "Warning: More than 5 riders found. Only using the first 5.\n";
+		K = 5;
+		riders.resize(K);
+	}
+
+	vector<double> capacities(K, 10.0);
+	for (int r = 0; r < K; r++) {
+		cout << "\nRider: " << riders[r] << "\n";
+		cout << "  Select your vehicle type:\n"
+			<< "   1) Bike (max 10 kg)\n"
+			<< "   2) Car  (max 50 kg)\n"
+			<< "   3) Truck(max 200 kg)\n"
+			<< "  Enter 1/2/3: ";
+		int ch;
+		cin >> ch;
+		cin.ignore(1000, '\n');
+		if (ch == 2)      capacities[r] = 50.0;
+		else if (ch == 3) capacities[r] = 200.0;
+		else              capacities[r] = 10.0;
+	}
+
+	vector<int> placed = collectPlacedOrders();
+	if (placed.empty()) {
+		cout << "No placed orders to dispatch right now.\n";
+		return;
+	}
+
+	string referenceDepot = "A1";
+	Node* refNode = G.nodesByCode[referenceDepot];
+
+	vector<pair<int, double>> keyed;
+	keyed.reserve(placed.size());
+	for (int idx : placed) {
+		Node* pnode = G.nodesByCode[orders[idx].pickupNodeCode];
+		double d = getDistanceBetweenNodes(refNode, pnode);
+		keyed.push_back({ idx, d });
+	}
+	sort(keyed.begin(), keyed.end(),
+		[&](const pair<int, double>& a, const pair<int, double>& b) {
+			return a.second < b.second;
+		});
+
+	vector<int> sortedPlaced;
+	sortedPlaced.reserve(keyed.size());
+
+	for (auto& kv : keyed) {
+		sortedPlaced.push_back(kv.first);
+	}
+
+	vector<vector<int>> riderBuckets(K);
+	for (int i = 0; i < (int)sortedPlaced.size(); i++) {
+		int riderIdx = i % K;
+		riderBuckets[riderIdx].push_back(sortedPlaced[i]);
+	}
+
+	for (int r = 0; r < K; r++) {
+		const string& username = riders[r];
+
+		string startCode;
+		auto itCurr = riderCurrentLoc.find(username);
+		if (itCurr != riderCurrentLoc.end()) {
+			startCode = itCurr->second;
+		}
+		else {
+			startCode = getHomeDepotFor(username);
+		}
+
+		if (G.nodesByCode.find(startCode) == G.nodesByCode.end()) {
+			startCode = "A1";
+		}
+
+		cout << "\n=== Dispatching orders for Rider: " << username
+			<< " (start at " << startCode << ") ===\n";
+
+		vector<Node*> route = computeSingleRiderRoute(startCode, riderBuckets[r], capacities[r]);
+		saveAllOrdersToFile();
+
+		if (!route.empty()) {
+			cout << "--- Full Node‐by‐Node Route for " << username << " ---\n";
+			for (Node* hop : route) {
+				cout << hop->code << " (" << hop->areaName << ")\n";
+			}
+			Node* lastNode = route.back();
+			cout << "Final Location: "
+				<< lastNode->code << " (" << lastNode->areaName << ")\n";
+			// (E) Update riderCurrentLoc so next dispatch uses this as the start
+			riderCurrentLoc[username] = lastNode->code;
+		}
+		else {
+			cout << "No feasible orders assigned to you (all overweight or missed deadlines).\n";
+		}
+		cout << "==============================================\n";
+	}
+}
+
+void riderMenu() {
+	int choice;
+	do {
+		cout << "\n======= Rider Menu =======\n";
+		cout << "1. View Available Orders\n";
+		cout << "2. Start Delivery\n";
+		cout << "3. Logout\n";
+		cout << "4. Start New Day\n";
+		cout << "Enter your choice: ";
+		cin >> choice;
+		cin.ignore();
+
+		switch (choice) {
+		case 1:
+			viewAssignedOrders();
+			break;
+		case 2:
+			riderDispatchAll();
+			break;
+		
+		case 3:
+		{
+			system("cls");
+			int log = welcome();
+			menu1(log);
+			return; // Exit the menu loop
+		}
+		case 4:
+			currentTime = 600;
+			break;
+		default:
+			cout << "Invalid choice. Try again.\n";
+		}
+	} while (choice != 3);
 }
 
 double timeInMinutes(Node* A, Node* B) {
@@ -1142,15 +1299,15 @@ vector<Node*> computeSingleRiderRoute(const string& startCode, const vector<int>
 			double dist1 = getDistanceBetweenNodes(currentNode, pickupNode);
 			double dist2 = getDistanceBetweenNodes(pickupNode, dropoffNode);
 			cout << "Order " << o.orderID << " delivered. "
-				<< "From “" << currentNode->areaName << "” → “"
-				<< pickupNode->areaName << "” → “"
-				<< dropoffNode->areaName << "”. "
+				<< "From " << currentNode->areaName << " -> "
+				<< pickupNode->areaName << " -> "
+				<< dropoffNode->areaName << " . "
 				<< "Leg distance: " << (dist1 + dist2) << " km.\n";
 		}
 
 		currentNode = dropoffNode;
 		remaining.erase(remaining.begin() + bestOrderIdx);
-		driverLoc = currentNode->code;
+		//driverLoc = currentNode->code;
 	}
 	if (!missedDeadlines.empty()) {
 		cout << "\n--- MISSED HARD DEADLINES (cannot be served on time) ---\n";
@@ -1172,46 +1329,47 @@ vector<Node*> computeSingleRiderRoute(const string& startCode, const vector<int>
 }
 
 
-void startDelivery(string riderLocation, double capacity) {
-	loadOrdersFromFile();
+//void startDelivery(string riderLocation, double capacity) {
+//	loadOrdersFromFile();
+//
+//	vector<int> placedIndices;
+//	for (int i = 0; i < (int)orders.size();i++) {
+//		if (orders[i].status == "Placed") {
+//			placedIndices.push_back(i);
+//		}
+//	}
+//
+//	if (placedIndices.empty()) {
+//		cout << "No new orders to deliver right now.\n";
+//		return;
+//	}
+//
+//	auto fullRoute = computeSingleRiderRoute(riderLocation, placedIndices, capacity);
+//	saveAllOrdersToFile();
+//
+//	cout << "\n--- Full Delivery Route ---\n";
+//	Node* prev = nullptr;
+//	for (Node* hop : fullRoute) {
+//		if (prev) {
+//			double d = getDistanceBetweenNodes(prev, hop);
+//			cout << hop->code << " (" << hop->areaName << ")"
+//				<< " [dist from prev: " << d << "]\n";
+//		}
+//		else {
+//			cout << hop->code << " (" << hop->areaName << ")"
+//				<< "   [start here]\n";
+//		}
+//		prev = hop;
+//	}
+//
+//	if (!fullRoute.empty()) {
+//		Node* lastNode = fullRoute.back();
+//		cout << "\nRider's final location: " 
+//		    << lastNode->code << " (" << lastNode->areaName << ")\n";
+//	}
+//
+//}
 
-	vector<int> placedIndices;
-	for (int i = 0; i < (int)orders.size();i++) {
-		if (orders[i].status == "Placed") {
-			placedIndices.push_back(i);
-		}
-	}
-
-	if (placedIndices.empty()) {
-		cout << "No new orders to deliver right now.\n";
-		return;
-	}
-
-	auto fullRoute = computeSingleRiderRoute(riderLocation, placedIndices, capacity);
-	saveAllOrdersToFile();
-
-	cout << "\n--- Full Delivery Route ---\n";
-	Node* prev = nullptr;
-	for (Node* hop : fullRoute) {
-		if (prev) {
-			double d = getDistanceBetweenNodes(prev, hop);
-			cout << hop->code << " (" << hop->areaName << ")"
-				<< " [dist from prev: " << d << "]\n";
-		}
-		else {
-			cout << hop->code << " (" << hop->areaName << ")"
-				<< "   [start here]\n";
-		}
-		prev = hop;
-	}
-
-	if (!fullRoute.empty()) {
-		Node* lastNode = fullRoute.back();
-		cout << "\nRider's final location: " 
-		    << lastNode->code << " (" << lastNode->areaName << ")\n";
-	}
-
-}
 void viewAssignedOrders() {
 	loadOrdersFromFile();
 	bool found = false;
@@ -1242,14 +1400,9 @@ int main() {
 		auto result = dijkstra(G.nodesByCode.size(), n->code, G);
 		allShortestPaths[n->code] = result;
 	}
-
+	loadRiderDepots("riderDepots.txt");
 	int log = welcome(); // user selects an option i.e Login / signup 
 	menu1(log);
 	return 0;
 }
 
-//some orders saved in file to use for future testing
-//001, abbas, 12345, H, H8, F, F6, 2, gift, Placed
-//002, abbas, 12345, C, C4, L, L1, 3, docs, Placed
-//003, abbas, 12345, E, E5, I, I3, 1, clothes, Placed
-//004, abbas, 12345, B, B10, N, N6, 5, electronics, Placed

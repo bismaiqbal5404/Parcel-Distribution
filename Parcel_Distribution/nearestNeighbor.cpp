@@ -1,4 +1,4 @@
-#include<iostream>
+﻿#include<iostream>
 #include<string>
 #include<Windows.h> // to have better control of the console window for eg to change color or move to a location on the console window
 #include<conio.h> // to take key input like arrow keys 
@@ -48,11 +48,19 @@ struct Order {
 	float parcelWeight;
 	string parcelType;
 	string status;
+	bool hasHardDeadline;
+	double deadlineTime;
 };
 vector<Order> orders;
 
 string username, fileName, password;
 string driverLoc = "A1";
+int T_pickup = 10;
+int T_dropoff = 7;
+// assuming the rider starts at 10 AM for delivery
+// time is in minutes after midnight
+int currentTime = (10 * 60);
+double avgSpeed = 40.0; // speed in km/h
 
 // function declarations
 void gotoxy(int x, int y);
@@ -687,6 +695,9 @@ void generateInvoice(const Order& order) {
 	cout << "Parcel Weight: " << order.parcelWeight << " kg\n";
 	cout << "Parcel Type: " << order.parcelType << endl;
 	cout << "Order Status: " << order.status << endl;
+	cout << "Urgent : " << order.hasHardDeadline ? "Yes\n" : "No\n";
+	if(order.deadlineTime >= 0 && order.deadlineTime <1440)
+		cout << "Deadline Time: " << order.deadlineTime << endl;
 	cout << "--------------------------------------\n";
 }
 
@@ -703,7 +714,9 @@ void loadOrdersFromFile() {
 
 		stringstream ss(line);
 		Order o;
-		string weight;
+		string weight, time;
+		string hasDeadline;
+
 
 		getline(ss, o.orderID, ',');
 		getline(ss, o.customerName, ',');
@@ -715,7 +728,11 @@ void loadOrdersFromFile() {
 		getline(ss, weight, ',');
 		getline(ss, o.parcelType, ',');
 		getline(ss, o.status, ',');
+		getline(ss, hasDeadline, ',');
+		getline(ss, time , ',');
 
+		o.hasHardDeadline = hasDeadline == "true" ? true : false;
+		o.deadlineTime = stoi(time);
 		o.parcelWeight = stof(weight);
 		orders.push_back(o);
 	}
@@ -723,6 +740,7 @@ void loadOrdersFromFile() {
 }
 
 void saveOrderToFile(const Order& order) {
+	string d = order.hasHardDeadline ? "true" : "false";
 	ofstream outFile("orders.txt", ios::app);
 	if (outFile.is_open()) {
 		outFile << order.orderID << ","
@@ -734,7 +752,9 @@ void saveOrderToFile(const Order& order) {
 			<< order.dropoffNodeCode << ","
 			<< order.parcelWeight << ","
 			<< order.parcelType << ","
-			<< order.status << "\n";
+			<< order.status << ","
+			<< d << "," 
+			<< order.deadlineTime << "\n";
 		outFile.close();
 	}
 	else {
@@ -746,6 +766,7 @@ void saveAllOrdersToFile() {
 	ofstream outFile("orders.txt");
 	if (outFile.is_open()) {
 		for (const auto& order : orders) {
+			string d = order.hasHardDeadline ? "true" : "false";
 			outFile << order.orderID << ","
 				<< order.customerName << ","
 				<< order.phoneNumber << ","
@@ -755,7 +776,9 @@ void saveAllOrdersToFile() {
 				<< order.dropoffNodeCode << ","
 				<< order.parcelWeight << ","
 				<< order.parcelType << ","
-				<< order.status << "\n";
+				<< order.status << ","
+				<< d << ","
+				<< order.deadlineTime << "\n";
 		}
 		outFile.close();
 	}
@@ -795,6 +818,20 @@ void placeNewOrder() {
 
 	cout << "Enter Parcel Type (Document, Electronics, Clothes): ";
 	getline(cin, newOrder.parcelType);
+
+	cout << "Is this an urgent (hard‐deadline) delivery? (Y/N): ";
+	char urgent; cin >> urgent;
+	if (urgent == 'Y' || urgent == 'y') {
+		newOrder.hasHardDeadline = true;
+		cout << "Enter deadline time in hours (0–23) and minutes (0–59): ";
+		int hr, mn;
+		scanf("%d %d", &hr, &mn);
+		newOrder.deadlineTime = hr * 60 + mn;  // store as minutes since midnight
+	}
+	else {
+		newOrder.hasHardDeadline = false;
+		newOrder.deadlineTime = 1e9; // a very large number so it’s effectively soft/none
+	}
 
 	// Generate order ID
 	stringstream ss;
@@ -946,8 +983,23 @@ void riderMenu() {
 
 // gets distance between any two nodes
 double getDistanceBetweenNodes(Node* A, Node* B) {
-	auto& info = allShortestPaths[A->code];
-	return info.first[B];
+	auto& spInfo = allShortestPaths[A->code].first;
+	if (spInfo.find(B) == spInfo.end()) {
+		return DBL_MAX;
+	}
+	return spInfo[B];
+}
+
+double timeInMinutes(Node* A, Node* B) {
+	// 1) Look up the precomputed distance (in km) from A → B
+	auto& spInfo = allShortestPaths[A->code].first;
+	if (spInfo.find(B) == spInfo.end()) {
+		return DBL_MAX; // unreachable
+	}
+	double distKm = spInfo[B];
+	// 2) Convert km → minutes (time = distance / speed * 60)
+	double minutes = (distKm / avgSpeed) * 60.0;
+	return minutes;
 }
 
 // given a starting location, generates a path for the rider to pick orders and deliver them in one go, currently no constraints are handled except
@@ -955,86 +1007,165 @@ double getDistanceBetweenNodes(Node* A, Node* B) {
 // so keeping pickup location and dest location adjacent such that once the rider picks up a parcel it delivers it first
 // not optimal bt simpler to code, will later change if time allows.
 vector<Node*> computeSingleRiderRoute(const string& startCode, const vector<int>& placedIndices, double capacity) {
+
 	vector<int > remaining = placedIndices;
+	vector<int> missedDeadlines;
+	vector<int> tooHeavyOrders;
 	vector<Node*> fullVisitSequence; // our route
 
 	Node* currentNode = G.nodesByCode[startCode];
+	
 	while (!remaining.empty()) {
-		double totalDist=0;
+
 		double bestDist = DBL_MAX;
 		int bestOrderIdx = -1;
-		Node* bestPickupNode = nullptr;
+		bool foundHardOrder = false;
 
 		for (int idxPos = 0; idxPos < (int)remaining.size();idxPos++) {
 			int orderIndex = remaining[idxPos];
-			double w = orders[orderIndex].parcelWeight;
-			if (w> capacity) {
+			Order& o = orders[orderIndex];
+
+			if (o.parcelWeight > capacity) {
 				continue;
 			}
-			Node* pickupNode = G.nodesByCode[orders[orderIndex].pickupNodeCode];
 
-			double d = getDistanceBetweenNodes(currentNode, pickupNode);
-			if (d < bestDist) {
-				bestDist = d;
+			if (!o.hasHardDeadline) {
+				continue;
+			}
+			Node* pickupNode = G.nodesByCode[o.pickupNodeCode];
+			Node* dropoffNode = G.nodesByCode[o.dropoffNodeCode];
+
+			double distToPickup = getDistanceBetweenNodes(currentNode, pickupNode);
+			if (distToPickup == DBL_MAX) continue;
+
+			double timeToPickup = (distToPickup / avgSpeed) * 60.0;
+			
+			double distToDropoff = getDistanceBetweenNodes(pickupNode, dropoffNode);
+			if (distToDropoff == DBL_MAX) continue;
+			double timeToDropoff = (distToDropoff / avgSpeed) * 60.0;
+
+			double finishTime = currentTime + timeToPickup + T_pickup + timeToDropoff + T_dropoff;
+			if (finishTime > o.deadlineTime) {
+				missedDeadlines.push_back(orderIndex);
+				continue;
+			}
+
+			if (distToPickup < bestDist) {
+				bestDist = distToPickup;
 				bestOrderIdx = idxPos;
-				bestPickupNode = pickupNode;
+				foundHardOrder = true;
 			}
 		}
+		
+		if (!foundHardOrder) {
+			bestDist = DBL_MAX;
+			bestOrderIdx = -1;
+			
+			for (int pos = 0; pos < (int)remaining.size(); pos++) {
+				int    ordIdx = remaining[pos];
+				Order& O = orders[ordIdx];
 
-		if (bestOrderIdx < 0) {
-			break;
+				// skip any order with a hard deadline (we either delivered it or recorded it as missed)
+				if (O.hasHardDeadline) {
+					continue;
+				}
+				// Skip overweight orders (record them)
+				if (O.parcelWeight > capacity) {
+					tooHeavyOrders.push_back(ordIdx);
+					continue;
+				}
+
+				// distance to pickup
+				Node* pickupNode = G.nodesByCode[O.pickupNodeCode];
+				double distToPickup = getDistanceBetweenNodes(currentNode, pickupNode);
+				if (distToPickup == DBL_MAX) {
+					// unreachable, skip
+					continue;
+				}
+
+				// Among no‐deadline, pick the nearest pickup
+				if (distToPickup < bestDist) {
+					bestDist = distToPickup;
+					bestOrderIdx = pos;
+				}
+			}
 		}
+		
+		if (bestOrderIdx < 0) break;
 		
 		int chosenOrderIdx = remaining[bestOrderIdx];
 		Order& o = orders[chosenOrderIdx];
 		Node* pickupNode = G.nodesByCode[o.pickupNodeCode];
 		Node* dropoffNode = G.nodesByCode[o.dropoffNodeCode];
-		totalDist += getDistanceBetweenNodes(currentNode, pickupNode) + getDistanceBetweenNodes(pickupNode, dropoffNode);
 
-		auto& shortestPathsPickup = allShortestPaths[currentNode->code];
-		auto partialPickupPath = reconstructPath(pickupNode, shortestPathsPickup.second);
-
-		if (!partialPickupPath.empty()) {
-			if (!fullVisitSequence.empty() && fullVisitSequence.back() == partialPickupPath.front()) {
-				for (int i = 1; i < (int)partialPickupPath.size(); i++) {
-					fullVisitSequence.push_back(partialPickupPath[i]);
+		{
+			auto& prevMap = allShortestPaths[currentNode->code].second;
+			vector<Node*> pathToPickup = reconstructPath(pickupNode, prevMap);
+			if (!pathToPickup.empty()) {
+				if (!fullVisitSequence.empty() && fullVisitSequence.back() == pathToPickup.front()) {
+					for (int i = 1; i < (int)pathToPickup.size(); i++)
+						fullVisitSequence.push_back(pathToPickup[i]);
 				}
-			}
-			else {
-				for (Node* n : partialPickupPath) {
-					fullVisitSequence.push_back(n);
+				else {
+					for (Node* n : pathToPickup)
+						fullVisitSequence.push_back(n);
 				}
 			}
 		}
 
-		auto& shortestPathsDropoff = allShortestPaths[pickupNode->code];
-		auto partialDropoffPath = reconstructPath(dropoffNode, shortestPathsDropoff.second);
+		{
+			auto& prevMap2 = allShortestPaths[pickupNode->code].second;
+			vector<Node*> pathToDropoff = reconstructPath(dropoffNode, prevMap2);
+			if (!pathToDropoff.empty()) {
+				if (!fullVisitSequence.empty()
+					&& fullVisitSequence.back() == pathToDropoff.front()) {
+					for (int i = 1; i < (int)pathToDropoff.size(); i++)
+						fullVisitSequence.push_back(pathToDropoff[i]);
+				}
+				else {
+					for (Node* n : pathToDropoff)
+						fullVisitSequence.push_back(n);
+				}
+			}
+		}
 
-		if (!partialDropoffPath.empty()) {
-			if (!fullVisitSequence.empty() && fullVisitSequence.back() == partialDropoffPath.front()) {
-				for (int i = 1; i < (int)partialDropoffPath.size();i++) {
-					fullVisitSequence.push_back(partialDropoffPath[i]);
-				}
-			}
-			else {
-				for (Node* n : partialDropoffPath) {
-					fullVisitSequence.push_back(n);
-				}
-			}
+		{
+			double dist1 = getDistanceBetweenNodes(currentNode, pickupNode);
+			double time1 = (dist1 / avgSpeed) * 60.0;
+			double dist2 = getDistanceBetweenNodes(pickupNode, dropoffNode);
+			double time2 = (dist2 / avgSpeed) * 60.0;
+			currentTime += time1 +T_pickup + time2 + T_dropoff;
 		}
 
 		o.status = "Delivered";
-		cout << o.orderID << "delivered. From "<< currentNode->areaName << " rider Location to " << G.nodesByCode[o.pickupNodeCode]->areaName << " to " << G.nodesByCode[o.dropoffNodeCode]->areaName <<
-			", covering distance(from rider Location -> pickup Location -> dest): " << totalDist << "\n\n";
-		remaining.erase(remaining.begin() + bestOrderIdx);
+		{
+			double dist1 = getDistanceBetweenNodes(currentNode, pickupNode);
+			double dist2 = getDistanceBetweenNodes(pickupNode, dropoffNode);
+			cout << "Order " << o.orderID << " delivered. "
+				<< "From “" << currentNode->areaName << "” → “"
+				<< pickupNode->areaName << "” → “"
+				<< dropoffNode->areaName << "”. "
+				<< "Leg distance: " << (dist1 + dist2) << " km.\n";
+		}
 
 		currentNode = dropoffNode;
+		remaining.erase(remaining.begin() + bestOrderIdx);
 		driverLoc = currentNode->code;
 	}
-	if (!remaining.empty()) {
-		for (int i = 0; i < remaining.size(); i++) {
-			cout << "\nCannot deliver order " << orders[remaining[i]].orderID << " because parcel weight: " 
-				<< orders[remaining[i]].parcelWeight << "kg exceeds vehicle capacity " << capacity << "kg, switch to another vehicle to deliver the order.\n";
+	if (!missedDeadlines.empty()) {
+		cout << "\n--- MISSED HARD DEADLINES (cannot be served on time) ---\n";
+		for (int idx : missedDeadlines) {
+			cout << "Order " << orders[idx].orderID
+				<< " missed its hard deadline (deadline = "
+				<< orders[idx].deadlineTime << " min).\n";
+		}
+	}
+	if (!tooHeavyOrders.empty()) {
+		cout << "\n--- TOO HEAVY FOR THIS VEHICLE ---\n";
+		for (int idx : tooHeavyOrders) {
+			cout << "Order " << orders[idx].orderID
+				<< " weight = " << orders[idx].parcelWeight
+				<< " kg > capacity = " << capacity << " kg.\n";
 		}
 	}
 	return fullVisitSequence;
@@ -1057,6 +1188,7 @@ void startDelivery(string riderLocation, double capacity) {
 	}
 
 	auto fullRoute = computeSingleRiderRoute(riderLocation, placedIndices, capacity);
+	saveAllOrdersToFile();
 
 	cout << "\n--- Full Delivery Route ---\n";
 	Node* prev = nullptr;
@@ -1073,13 +1205,10 @@ void startDelivery(string riderLocation, double capacity) {
 		prev = hop;
 	}
 
-	saveAllOrdersToFile();
-
 	if (!fullRoute.empty()) {
-		Node* finalNode = fullRoute.back();
-		cout << "\nAll orders delivered. Rider�s new location: "
-			<< finalNode->code << " (" << finalNode->areaName << ")\n";
-		riderLocation = finalNode->code;
+		Node* lastNode = fullRoute.back();
+		cout << "\nRider's final location: " 
+		    << lastNode->code << " (" << lastNode->areaName << ")\n";
 	}
 
 }

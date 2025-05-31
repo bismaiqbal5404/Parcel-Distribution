@@ -1,4 +1,10 @@
-001,abbas,12345,H,H8,F,F6,12,gift,Delivered
-002,abbas,12345,C,C4,L,L1,3,docs,Delivered
-003,abbas,12345,E,E5,I,I3,1,clothes,Delivered
-004,abbas,12345,B,B10,N,N6,157,electronics,Delivered
+001,Abbas,12345,H,H8,F,F6,12,gift,Delivered
+002,Sara,98765,A,A2,B,B4,5,document,Delivered
+003,John,11111,C,C1,D,D7,75,electronics,Delivered
+004,Aisha,22222,G,G3,H,H5,3,food,Delivered
+005,Ali,33333,E,E9,F,F1,15,furniture,Delivered
+006,Noor,44444,B,B5,C,C8,2,clothing,Delivered
+007,Omar,55555,D,D2,E,E6,8,medical,Delivered
+008,Lina,66666,A,A3,B,B7,10,gift,Delivered
+009,Zain,77777,H,H4,G,G8,4,document,Delivered
+010,Maya,88888,C,C6,D,D2,64,electronics,Delivered

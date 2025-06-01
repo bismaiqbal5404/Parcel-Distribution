@@ -1,6 +1,6 @@
 001,Abbas,12345,H,H8,F,F6,12,gift,Delivered,true,720
 002,Sara,98765,A,A2,B,B4,5,document,Delivered,false,0
-003,John,11111,C,C1,D,D7,7,electronics,Placed,true,800
+003,John,11111,C,C1,D,D7,7,electronics,Delivered,true,800
 004,Aisha,22222,G,G3,H,H5,3,food,Delivered,false,0
 005,Ali,33333,E,E9,F,F1,15,furniture,Delivered,true,900
 006,Noor,44444,B,B5,C,C8,2,clothing,Delivered,false,0
@@ -8,10 +8,10 @@
 008,Lina,66666,A,A3,B,B7,10,gift,Delivered,false,0
 009,Zain,77777,H,H4,G,G9,4,document,Placed,true,1000
 010,Maya,88888,C,C6,D,D2,6,electronics,Delivered,false,0
-011,Usman,11223,E,E4,F,F9,8,gift,Delivered,true,650
-012,Hina,22334,A,A10,C,C5,52,electronics,Placed,true,720
+011,Usman,11223,E,E4,F,F9,8,gift,Delivered,true,750
+012,Hina,22334,A,A10,C,C5,52,electronics,Delivered,true,770
 013,Salman,33445,B,B6,D,D14,15,medical,Delivered,false,0
-014,Mariam,44556,D,D3,E,E1,3,document,Placed,true,800
+014,Mariam,44556,D,D3,E,E1,3,document,Delivered,true,800
 015,Faraz,55667,C,C4,H,H1,200,furniture,Delivered,true,1100
 016,Nida,66778,F,F7,G,G3,7,clothing,Delivered,false,0
 017,Zeeshan,77889,G,G5,J,J8,25,electronics,Delivered,true,900
@@ -32,7 +32,7 @@
 032,Noor,23241,J,J10,K,K2,13,medical,Delivered,false,0
 033,Hassan,24251,L,L4,M,M1,180,gift,Delivered,true,1000
 034,Maheen,25261,G,G8,N,N7,4,document,Placed,false,0
-035,Rayyan,26271,K,K1,I,I2,8,electronics,Placed,true,720
+035,Rayyan,26271,K,K1,I,I2,8,electronics,Delivered,true,820
 036,Zoya,27281,N,N9,E,E6,9,clothing,Delivered,false,0
 037,Waqas,28291,B,B10,F,F5,42,furniture,Delivered,true,830
 038,Aleena,29301,M,M5,D,D6,17,gift,Delivered,false,0

@@ -11,6 +11,8 @@
 #include<algorithm>
 #include<limits>
 #include<float.h>
+#include<unordered_set>
+#include<set>
 using namespace std;
 
 struct Node {
@@ -723,7 +725,7 @@ void generateInvoice(const Order& order) {
 	cout << "Parcel Type: " << order.parcelType << endl;
 	cout << "Order Status: " << order.status << endl;
 	cout << "Urgent : " << order.hasHardDeadline ? "Yes\n" : "No\n";
-	if(order.deadlineTime >= 0 && order.deadlineTime <1440)
+	if (order.deadlineTime >= 0 && order.deadlineTime < 1440)
 		cout << "Deadline Time: " << order.deadlineTime << endl;
 	cout << "--------------------------------------\n";
 }
@@ -756,7 +758,7 @@ void loadOrdersFromFile() {
 		getline(ss, o.parcelType, ',');
 		getline(ss, o.status, ',');
 		getline(ss, hasDeadline, ',');
-		getline(ss, time , ',');
+		getline(ss, time, ',');
 
 		o.hasHardDeadline = hasDeadline == "true" ? true : false;
 		o.deadlineTime = stoi(time);
@@ -780,7 +782,7 @@ void saveOrderToFile(const Order& order) {
 			<< order.parcelWeight << ","
 			<< order.parcelType << ","
 			<< order.status << ","
-			<< d << "," 
+			<< d << ","
 			<< order.deadlineTime << "\n";
 		outFile.close();
 	}
@@ -1130,7 +1132,7 @@ void riderMenu() {
 		case 2:
 			riderDispatchAll();
 			break;
-		
+
 		case 3:
 		{
 			system("cls");
@@ -1140,6 +1142,7 @@ void riderMenu() {
 		}
 		case 4:
 			currentTime = 600;
+			riderCurrentLoc.clear();
 			break;
 		default:
 			cout << "Invalid choice. Try again.\n";
@@ -1148,226 +1151,521 @@ void riderMenu() {
 }
 
 double timeInMinutes(Node* A, Node* B) {
-	// 1) Look up the precomputed distance (in km) from A → B
 	auto& spInfo = allShortestPaths[A->code].first;
 	if (spInfo.find(B) == spInfo.end()) {
 		return DBL_MAX; // unreachable
 	}
 	double distKm = spInfo[B];
-	// 2) Convert km → minutes (time = distance / speed * 60)
 	double minutes = (distKm / avgSpeed) * 60.0;
 	return minutes;
+}
+
+vector<Node*> twoOptOptimizeRoute(
+	const string& startCode,
+	const vector<Node*>& route,
+	const unordered_map<Node*, int>& nodeToOrder,
+	const unordered_map<Node*, bool>& nodeIsDrop
+) {
+	if (route.size() < 3)
+		return route;
+
+	auto totalDistance = [&](const vector<Node*>& seq) {
+		double distSum = 0.0;
+		Node* prev = G.nodesByCode[startCode];
+		for (Node* nxt : seq) {
+			double d = getDistanceBetweenNodes(prev, nxt);
+			if (d == DBL_MAX) return DBL_MAX;
+			distSum += d;
+			prev = nxt;
+		}
+		return distSum;
+		};
+
+	vector<Node*> bestRoute = route;
+	double bestDist = totalDistance(bestRoute);
+
+	bool improved = true;
+	size_t N = bestRoute.size();
+
+	while (improved) {
+		improved = false;
+		for (size_t i = 0; i < N - 1 && !improved; ++i) {
+			for (size_t k = i + 1; k < N && !improved; ++k) {
+				bool validSwap = true;
+
+				
+				unordered_map<int, size_t> origPickIdx, origDropIdx;
+				for (size_t x = i; x <= k; ++x) {
+					Node* node = bestRoute[x];
+					
+					auto itOrd = nodeToOrder.find(node);
+					if (itOrd == nodeToOrder.end()) {
+						continue;
+					}
+					int ord = itOrd->second;
+					bool isDrop = nodeIsDrop.at(node);
+					if (isDrop) {
+						origDropIdx[ord] = x;
+					}
+					else {
+						origPickIdx[ord] = x;
+					}
+				}
+				
+				for (auto& kv : origPickIdx) {
+					int ord = kv.first;
+					size_t p = kv.second;              
+					if (origDropIdx.count(ord)) {
+						size_t d = origDropIdx[ord];         
+						size_t newP = i + (k - p);
+						size_t newD = i + (k - d);
+						if (newP >= newD) {
+							validSwap = false;
+							break;
+						}
+					}
+				}
+				if (!validSwap) continue;
+
+				for (auto& kv : origDropIdx) {
+					int ord = kv.first;
+					size_t d = kv.second;                    
+					if (!origPickIdx.count(ord)) {
+						size_t origP = N; 
+						for (size_t y = 0; y < N; ++y) {
+							auto itO = nodeToOrder.find(bestRoute[y]);
+							if (itO != nodeToOrder.end() && itO->second == ord
+								&& !nodeIsDrop.at(bestRoute[y])) {
+								origP = y;
+								break;
+							}
+						}
+						if (origP == N) {
+							validSwap = false;
+							break;
+						}
+						size_t newD = i + (k - d);
+						if (origP >= newD) {
+							validSwap = false;
+							break;
+						}
+					}
+				}
+				if (!validSwap) continue;
+
+				for (auto& kv : origPickIdx) {
+					int ord = kv.first;
+					size_t p = kv.second;   // original pickup idx
+					if (!origDropIdx.count(ord)) {
+						size_t origD = N;
+						for (size_t y = 0; y < N; ++y) {
+							auto itO = nodeToOrder.find(bestRoute[y]);
+							if (itO != nodeToOrder.end() && itO->second == ord
+								&& nodeIsDrop.at(bestRoute[y])) {
+								origD = y;
+								break;
+							}
+						}
+						if (origD == N) {
+							validSwap = false;
+							break;
+						}
+						size_t newP = i + (k - p);
+						if (newP >= origD) {
+							validSwap = false;
+							break;
+						}
+					}
+				}
+				if (!validSwap) continue;
+
+				vector<Node*> newRoute = bestRoute;
+				reverse(newRoute.begin() + i, newRoute.begin() + k + 1);
+				double newDist = totalDistance(newRoute);
+				if (newDist < bestDist) {
+					bestDist = newDist;
+					bestRoute = move(newRoute);
+					improved = true;
+				}
+			}
+		}
+	}
+
+	return bestRoute;
+}
+
+vector<Node*> computeSingleRiderRoute(const string& startCode, const vector<int>& placedIndices, double capacity) {
+	struct PDU {
+		int ordIdx;
+		Node* pickupNode;
+		Node* dropoffNode;
+		bool pickedUp;
+		bool delivered;
+		float weight;
+	};
+	vector<PDU> tasks;
+	for (int idx : placedIndices) {
+		Order& o = orders[idx];
+		tasks.push_back({ idx, G.nodesByCode[o.pickupNodeCode], G.nodesByCode[o.dropoffNodeCode], false , false, o.parcelWeight });
+	}
+
+	Node* currentNode = G.nodesByCode[startCode];
+	double localTime = currentTime;
+	float currentLoad = 0;
+	vector<Node*> fullVisitSequence;
+
+	while (true) {
+		vector<int> missedPos, heavyPos, feasibleHardPos, feasibleSoftPos;
+		for (int i = 0; i < (int)tasks.size(); ++i) {
+			PDU& t = tasks[i];
+			if (t.delivered) continue;
+
+			if (!t.pickedUp) {
+				if (t.weight + currentLoad > capacity) {
+					heavyPos.push_back(i);
+					continue;
+				}
+
+				Order& o = orders[t.ordIdx];
+				if (o.hasHardDeadline) {
+					Node* PU = t.pickupNode;
+					Node* DO = t.dropoffNode;
+					double d1 = getDistanceBetweenNodes(currentNode, PU);
+					double d2 = getDistanceBetweenNodes(PU, DO);
+
+					if (d1 == DBL_MAX || d2 == DBL_MAX) {
+						missedPos.push_back(i);
+						continue;
+					}
+					double t1 = (d1 / avgSpeed) * 60.0;
+					double t2 = (d2 / avgSpeed) * 60.0;
+					double finishTime = localTime + t1 + T_pickup + t2 + T_dropoff;
+					if (finishTime > o.deadlineTime) {
+						missedPos.push_back(i);
+					}
+					else {
+						feasibleHardPos.push_back(i);
+					}
+				}
+
+				else {
+					Node* PU = t.pickupNode;
+					double d1 = getDistanceBetweenNodes(currentNode, PU);
+					if (d1 == DBL_MAX) {
+						missedPos.push_back(i);
+					}
+					else {
+						feasibleSoftPos.push_back(i);
+					}
+				}
+			}
+
+			else {
+				Node* DO = t.dropoffNode;
+				double d2 = getDistanceBetweenNodes(currentNode, DO);
+				if (d2 == DBL_MAX) {
+					missedPos.push_back(i);
+				}
+				else {
+					feasibleHardPos.push_back(i);
+				}
+			}
+		}
+
+		vector<int> toRemove = missedPos;
+		toRemove.insert(toRemove.end(), heavyPos.begin(), heavyPos.end());
+		sort(toRemove.rbegin(), toRemove.rend());
+		for (int pos : toRemove) {
+			if (pos >= 0 && pos < (int)tasks.size()) {
+				tasks[pos].delivered = true; // mark as “done/cancelled”
+			}
+		}
+
+		int chosen = -1;
+		if (!feasibleHardPos.empty()) {
+			double bestD = DBL_MAX;
+			for (int i : feasibleHardPos) {
+				PDU& t = tasks[i];
+				Node* target = t.pickedUp ? t.dropoffNode : t.pickupNode;
+				double d = getDistanceBetweenNodes(currentNode, target);
+				if (d < bestD) { bestD = d; chosen = i; }
+			}
+		}
+		else if (!feasibleSoftPos.empty()) {
+			double bestD = DBL_MAX;
+			for (int i : feasibleSoftPos) {
+				PDU& t = tasks[i];
+				Node* target = t.pickupNode;
+				double d = getDistanceBetweenNodes(currentNode, target);
+				if (d < bestD) { bestD = d; chosen = i; }
+			}
+		}
+		else {
+			// No more deliverable tasks remain
+			break;
+		}
+
+		PDU& t = tasks[chosen];
+		if (!t.pickedUp) {
+			auto& prevMap = allShortestPaths[currentNode->code].second;
+			vector<Node*> pathToPU = reconstructPath(t.pickupNode, prevMap);
+			if (!pathToPU.empty()) {
+				if (!fullVisitSequence.empty() && fullVisitSequence.back() == pathToPU.front()) {
+					for (size_t k = 1; k < pathToPU.size(); ++k)
+						fullVisitSequence.push_back(pathToPU[k]);
+				}
+				else {
+					for (auto* n : pathToPU)
+						fullVisitSequence.push_back(n);
+				}
+			}
+			double d1 = getDistanceBetweenNodes(currentNode, t.pickupNode);
+			double t1 = (d1 / avgSpeed) * 60.0;
+			localTime += t1 + T_pickup;
+			currentLoad += t.weight;
+			t.pickedUp = true;
+			currentNode = t.pickupNode;
+			cout << "Order " << t.ordIdx << " picked up at "
+				<< currentNode->areaName
+				<< ". (Load=" << currentLoad << ")\n";
+		}
+		else {
+			auto& prevMap2 = allShortestPaths[currentNode->code].second;
+			vector<Node*> pathToDO = reconstructPath(t.dropoffNode, prevMap2);
+			if (!pathToDO.empty()) {
+				if (!fullVisitSequence.empty() && fullVisitSequence.back() == pathToDO.front()) {
+					for (size_t k = 1; k < pathToDO.size(); ++k)
+						fullVisitSequence.push_back(pathToDO[k]);
+				}
+				else {
+					for (auto* n : pathToDO)
+						fullVisitSequence.push_back(n);
+				}
+			}
+			double d2 = getDistanceBetweenNodes(currentNode, t.dropoffNode);
+			double t2 = (d2 / avgSpeed) * 60.0;
+			localTime += t2 + T_dropoff;
+			currentLoad -= t.weight;
+			t.delivered = true;
+			orders[t.ordIdx].status = "Delivered";
+			currentNode = t.dropoffNode;
+			cout << "Order " << t.ordIdx << " delivered at "
+				<< currentNode->areaName
+				<< ". (Load=" << currentLoad
+				<< ") Distance: " << fixed << setprecision(2)
+				<< d2 << " km\n";
+		}
+	}
+
+	set<int> printMissed, printHeavy;
+	for (auto& t : tasks) {
+		if (!t.pickedUp && !t.delivered) {
+			if (t.weight + 0 > capacity)
+				printHeavy.insert(t.ordIdx);
+			else printMissed.insert(t.ordIdx);
+		}
+		else if (t.pickedUp && !t.delivered) {
+			printMissed.insert(t.ordIdx);
+		}
+	}
+
+	if(!printMissed.empty()) {
+		cout << "\n--- MISSED OR UNREACHABLE ORDERS ---\n";
+		for (int idx : printMissed) {
+			cout << "Order " << idx
+				<< " missed/unreachable. Deadline = "
+				<< orders[idx].deadlineTime << " min\n";
+		}
+	}
+	if (!printHeavy.empty()) {
+		cout << "\n--- TOO HEAVY FOR THIS VEHICLE ---\n";
+		for (int idx : printHeavy) {
+			cout << "Order " << idx
+				<< " weight=" << fixed << setprecision(2)
+				<< orders[idx].parcelWeight
+				<< " kg > capacity=" << capacity << " kg\n";
+		}
+	}
+
+	unordered_map<Node*, int> nodeToOrder;
+	   unordered_map<Node*, bool> nodeIsDrop;
+	   for (auto& t : tasks) {
+	       nodeToOrder[t.pickupNode]  = t.ordIdx;
+	       nodeIsDrop[t.pickupNode]   = false;
+	       nodeToOrder[t.dropoffNode] = t.ordIdx;
+	       nodeIsDrop[t.dropoffNode]  = true;
+	   }
+
+	if (fullVisitSequence.size() >3) {
+		fullVisitSequence = twoOptOptimizeRoute(startCode, fullVisitSequence, nodeToOrder, nodeIsDrop);
+	}
+
+	return fullVisitSequence;
 }
 
 // given a starting location, generates a path for the rider to pick orders and deliver them in one go, currently no constraints are handled except
 // that the rider cannot go to a destination without going to its pickup location first ( cannot deliver a order you don't have )
 // so keeping pickup location and dest location adjacent such that once the rider picks up a parcel it delivers it first
 // not optimal bt simpler to code, will later change if time allows.
-vector<Node*> computeSingleRiderRoute(const string& startCode, const vector<int>& placedIndices, double capacity) {
-
-	vector<int > remaining = placedIndices;
-	vector<int> missedDeadlines;
-	vector<int> tooHeavyOrders;
-	vector<Node*> fullVisitSequence; // our route
-
-	Node* currentNode = G.nodesByCode[startCode];
-	
-	while (!remaining.empty()) {
-
-		double bestDist = DBL_MAX;
-		int bestOrderIdx = -1;
-		bool foundHardOrder = false;
-
-		for (int idxPos = 0; idxPos < (int)remaining.size();idxPos++) {
-			int orderIndex = remaining[idxPos];
-			Order& o = orders[orderIndex];
-
-			if (o.parcelWeight > capacity) {
-				continue;
-			}
-
-			if (!o.hasHardDeadline) {
-				continue;
-			}
-			Node* pickupNode = G.nodesByCode[o.pickupNodeCode];
-			Node* dropoffNode = G.nodesByCode[o.dropoffNodeCode];
-
-			double distToPickup = getDistanceBetweenNodes(currentNode, pickupNode);
-			if (distToPickup == DBL_MAX) continue;
-
-			double timeToPickup = (distToPickup / avgSpeed) * 60.0;
-			
-			double distToDropoff = getDistanceBetweenNodes(pickupNode, dropoffNode);
-			if (distToDropoff == DBL_MAX) continue;
-			double timeToDropoff = (distToDropoff / avgSpeed) * 60.0;
-
-			double finishTime = currentTime + timeToPickup + T_pickup + timeToDropoff + T_dropoff;
-			if (finishTime > o.deadlineTime) {
-				missedDeadlines.push_back(orderIndex);
-				continue;
-			}
-
-			if (distToPickup < bestDist) {
-				bestDist = distToPickup;
-				bestOrderIdx = idxPos;
-				foundHardOrder = true;
-			}
-		}
-		
-		if (!foundHardOrder) {
-			bestDist = DBL_MAX;
-			bestOrderIdx = -1;
-			
-			for (int pos = 0; pos < (int)remaining.size(); pos++) {
-				int    ordIdx = remaining[pos];
-				Order& O = orders[ordIdx];
-
-				// skip any order with a hard deadline (we either delivered it or recorded it as missed)
-				if (O.hasHardDeadline) {
-					continue;
-				}
-				// Skip overweight orders (record them)
-				if (O.parcelWeight > capacity) {
-					tooHeavyOrders.push_back(ordIdx);
-					continue;
-				}
-
-				// distance to pickup
-				Node* pickupNode = G.nodesByCode[O.pickupNodeCode];
-				double distToPickup = getDistanceBetweenNodes(currentNode, pickupNode);
-				if (distToPickup == DBL_MAX) {
-					// unreachable, skip
-					continue;
-				}
-
-				// Among no‐deadline, pick the nearest pickup
-				if (distToPickup < bestDist) {
-					bestDist = distToPickup;
-					bestOrderIdx = pos;
-				}
-			}
-		}
-		
-		if (bestOrderIdx < 0) break;
-		
-		int chosenOrderIdx = remaining[bestOrderIdx];
-		Order& o = orders[chosenOrderIdx];
-		Node* pickupNode = G.nodesByCode[o.pickupNodeCode];
-		Node* dropoffNode = G.nodesByCode[o.dropoffNodeCode];
-
-		{
-			auto& prevMap = allShortestPaths[currentNode->code].second;
-			vector<Node*> pathToPickup = reconstructPath(pickupNode, prevMap);
-			if (!pathToPickup.empty()) {
-				if (!fullVisitSequence.empty() && fullVisitSequence.back() == pathToPickup.front()) {
-					for (int i = 1; i < (int)pathToPickup.size(); i++)
-						fullVisitSequence.push_back(pathToPickup[i]);
-				}
-				else {
-					for (Node* n : pathToPickup)
-						fullVisitSequence.push_back(n);
-				}
-			}
-		}
-
-		{
-			auto& prevMap2 = allShortestPaths[pickupNode->code].second;
-			vector<Node*> pathToDropoff = reconstructPath(dropoffNode, prevMap2);
-			if (!pathToDropoff.empty()) {
-				if (!fullVisitSequence.empty()
-					&& fullVisitSequence.back() == pathToDropoff.front()) {
-					for (int i = 1; i < (int)pathToDropoff.size(); i++)
-						fullVisitSequence.push_back(pathToDropoff[i]);
-				}
-				else {
-					for (Node* n : pathToDropoff)
-						fullVisitSequence.push_back(n);
-				}
-			}
-		}
-
-		{
-			double dist1 = getDistanceBetweenNodes(currentNode, pickupNode);
-			double time1 = (dist1 / avgSpeed) * 60.0;
-			double dist2 = getDistanceBetweenNodes(pickupNode, dropoffNode);
-			double time2 = (dist2 / avgSpeed) * 60.0;
-			currentTime += time1 +T_pickup + time2 + T_dropoff;
-		}
-
-		o.status = "Delivered";
-		{
-			double dist1 = getDistanceBetweenNodes(currentNode, pickupNode);
-			double dist2 = getDistanceBetweenNodes(pickupNode, dropoffNode);
-			cout << "Order " << o.orderID << " delivered. "
-				<< "From " << currentNode->areaName << " -> "
-				<< pickupNode->areaName << " -> "
-				<< dropoffNode->areaName << " . "
-				<< "Leg distance: " << (dist1 + dist2) << " km.\n";
-		}
-
-		currentNode = dropoffNode;
-		remaining.erase(remaining.begin() + bestOrderIdx);
-		//driverLoc = currentNode->code;
-	}
-	if (!missedDeadlines.empty()) {
-		cout << "\n--- MISSED HARD DEADLINES (cannot be served on time) ---\n";
-		for (int idx : missedDeadlines) {
-			cout << "Order " << orders[idx].orderID
-				<< " missed its hard deadline (deadline = "
-				<< orders[idx].deadlineTime << " min).\n";
-		}
-	}
-	if (!tooHeavyOrders.empty()) {
-		cout << "\n--- TOO HEAVY FOR THIS VEHICLE ---\n";
-		for (int idx : tooHeavyOrders) {
-			cout << "Order " << orders[idx].orderID
-				<< " weight = " << orders[idx].parcelWeight
-				<< " kg > capacity = " << capacity << " kg.\n";
-		}
-	}
-	return fullVisitSequence;
-}
-
-
-//void startDelivery(string riderLocation, double capacity) {
-//	loadOrdersFromFile();
+//vector<Node*> computeSingleRiderRoute(const string& startCode, const vector<int>& placedIndices, double capacity) {
 //
-//	vector<int> placedIndices;
-//	for (int i = 0; i < (int)orders.size();i++) {
-//		if (orders[i].status == "Placed") {
-//			placedIndices.push_back(i);
+//	vector<int > remaining = placedIndices;
+//	vector<int> missedDeadlines;
+//	vector<int> tooHeavyOrders;
+//	vector<Node*> fullVisitSequence; // our route
+//
+//	Node* currentNode = G.nodesByCode[startCode];
+//
+//	while (!remaining.empty()) {
+//
+//		double bestDist = DBL_MAX;
+//		int bestOrderIdx = -1;
+//		bool foundHardOrder = false;
+//
+//		for (int idxPos = 0; idxPos < (int)remaining.size();idxPos++) {
+//			int orderIndex = remaining[idxPos];
+//			Order& o = orders[orderIndex];
+//
+//			if (o.parcelWeight > capacity) {
+//				continue;
+//			}
+//
+//			if (!o.hasHardDeadline) {
+//				continue;
+//			}
+//			Node* pickupNode = G.nodesByCode[o.pickupNodeCode];
+//			Node* dropoffNode = G.nodesByCode[o.dropoffNodeCode];
+//
+//			double distToPickup = getDistanceBetweenNodes(currentNode, pickupNode);
+//			if (distToPickup == DBL_MAX) continue;
+//
+//			double timeToPickup = (distToPickup / avgSpeed) * 60.0;
+//
+//			double distToDropoff = getDistanceBetweenNodes(pickupNode, dropoffNode);
+//			if (distToDropoff == DBL_MAX) continue;
+//			double timeToDropoff = (distToDropoff / avgSpeed) * 60.0;
+//
+//			double finishTime = currentTime + timeToPickup + T_pickup + timeToDropoff + T_dropoff;
+//			if (finishTime > o.deadlineTime) {
+//				missedDeadlines.push_back(orderIndex);
+//				continue;
+//			}
+//
+//			if (distToPickup < bestDist) {
+//				bestDist = distToPickup;
+//				bestOrderIdx = idxPos;
+//				foundHardOrder = true;
+//			}
+//		}
+//
+//		if (!foundHardOrder) {
+//			bestDist = DBL_MAX;
+//			bestOrderIdx = -1;
+//
+//			for (int pos = 0; pos < (int)remaining.size(); pos++) {
+//				int    ordIdx = remaining[pos];
+//				Order& O = orders[ordIdx];
+//
+//				if (O.hasHardDeadline) {
+//					continue;
+//				}
+//				if (O.parcelWeight > capacity) {
+//					tooHeavyOrders.push_back(ordIdx);
+//					continue;
+//				}
+//
+//				Node* pickupNode = G.nodesByCode[O.pickupNodeCode];
+//				double distToPickup = getDistanceBetweenNodes(currentNode, pickupNode);
+//				if (distToPickup == DBL_MAX) {
+//					// unreachable, skip
+//					continue;
+//				}
+//
+//				if (distToPickup < bestDist) {
+//					bestDist = distToPickup;
+//					bestOrderIdx = pos;
+//				}
+//			}
+//		}
+//
+//		if (bestOrderIdx < 0) break;
+//
+//		int chosenOrderIdx = remaining[bestOrderIdx];
+//		Order& o = orders[chosenOrderIdx];
+//		Node* pickupNode = G.nodesByCode[o.pickupNodeCode];
+//		Node* dropoffNode = G.nodesByCode[o.dropoffNodeCode];
+//
+//		{
+//			auto& prevMap = allShortestPaths[currentNode->code].second;
+//			vector<Node*> pathToPickup = reconstructPath(pickupNode, prevMap);
+//			if (!pathToPickup.empty()) {
+//				if (!fullVisitSequence.empty() && fullVisitSequence.back() == pathToPickup.front()) {
+//					for (int i = 1; i < (int)pathToPickup.size(); i++)
+//						fullVisitSequence.push_back(pathToPickup[i]);
+//				}
+//				else {
+//					for (Node* n : pathToPickup)
+//						fullVisitSequence.push_back(n);
+//				}
+//			}
+//		}
+//
+//		{
+//			auto& prevMap2 = allShortestPaths[pickupNode->code].second;
+//			vector<Node*> pathToDropoff = reconstructPath(dropoffNode, prevMap2);
+//			if (!pathToDropoff.empty()) {
+//				if (!fullVisitSequence.empty()
+//					&& fullVisitSequence.back() == pathToDropoff.front()) {
+//					for (int i = 1; i < (int)pathToDropoff.size(); i++)
+//						fullVisitSequence.push_back(pathToDropoff[i]);
+//				}
+//				else {
+//					for (Node* n : pathToDropoff)
+//						fullVisitSequence.push_back(n);
+//				}
+//			}
+//		}
+//
+//		{
+//			double dist1 = getDistanceBetweenNodes(currentNode, pickupNode);
+//			double time1 = (dist1 / avgSpeed) * 60.0;
+//			double dist2 = getDistanceBetweenNodes(pickupNode, dropoffNode);
+//			double time2 = (dist2 / avgSpeed) * 60.0;
+//			currentTime += time1 + T_pickup + time2 + T_dropoff;
+//		}
+//
+//		o.status = "Delivered";
+//		{
+//			double dist1 = getDistanceBetweenNodes(currentNode, pickupNode);
+//			double dist2 = getDistanceBetweenNodes(pickupNode, dropoffNode);
+//			cout << "Order " << o.orderID << " delivered. "
+//				<< "From " << currentNode->areaName << " -> "
+//				<< pickupNode->areaName << " -> "
+//				<< dropoffNode->areaName << " . "
+//				<< "Leg distance: " << (dist1 + dist2) << " km.\n";
+//		}
+//
+//		currentNode = dropoffNode;
+//		remaining.erase(remaining.begin() + bestOrderIdx);
+//		//driverLoc = currentNode->code;
+//	}
+//	if (!missedDeadlines.empty()) {
+//		cout << "\n--- MISSED HARD DEADLINES (cannot be served on time) ---\n";
+//		for (int idx : missedDeadlines) {
+//			cout << "Order " << orders[idx].orderID
+//				<< " missed its hard deadline (deadline = "
+//				<< orders[idx].deadlineTime << " min).\n";
 //		}
 //	}
-//
-//	if (placedIndices.empty()) {
-//		cout << "No new orders to deliver right now.\n";
-//		return;
-//	}
-//
-//	auto fullRoute = computeSingleRiderRoute(riderLocation, placedIndices, capacity);
-//	saveAllOrdersToFile();
-//
-//	cout << "\n--- Full Delivery Route ---\n";
-//	Node* prev = nullptr;
-//	for (Node* hop : fullRoute) {
-//		if (prev) {
-//			double d = getDistanceBetweenNodes(prev, hop);
-//			cout << hop->code << " (" << hop->areaName << ")"
-//				<< " [dist from prev: " << d << "]\n";
+//	if (!tooHeavyOrders.empty()) {
+//		cout << "\n--- TOO HEAVY FOR THIS VEHICLE ---\n";
+//		for (int idx : tooHeavyOrders) {
+//			cout << "Order " << orders[idx].orderID
+//				<< " weight = " << orders[idx].parcelWeight
+//				<< " kg > capacity = " << capacity << " kg.\n";
 //		}
-//		else {
-//			cout << hop->code << " (" << hop->areaName << ")"
-//				<< "   [start here]\n";
-//		}
-//		prev = hop;
 //	}
-//
-//	if (!fullRoute.empty()) {
-//		Node* lastNode = fullRoute.back();
-//		cout << "\nRider's final location: " 
-//		    << lastNode->code << " (" << lastNode->areaName << ")\n";
-//	}
-//
+//	return fullVisitSequence;
 //}
 
 void viewAssignedOrders() {
@@ -1405,4 +1703,3 @@ int main() {
 	menu1(log);
 	return 0;
 }
-

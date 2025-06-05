@@ -1,5 +1,10 @@
 ﻿  nearestNeighbor.cpp
-D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\nearestNeighbor.cpp(851,10): warning C4566: character represented by universal-character-name '\u2010' cannot be represented in the current code page (1252)
-D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\nearestNeighbor.cpp(1099,12): warning C4566: character represented by universal-character-name '\u2010' cannot be represented in the current code page (1252)
-D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\nearestNeighbor.cpp(1698,44): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-  Parcel_Distribution.vcxproj -> D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\x64\Debug\Parcel_Distribution.exe
+D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\nearestNeighbor.cpp(955,10): warning C4566: character represented by universal-character-name '\u2010' cannot be represented in the current code page (1252)
+D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\nearestNeighbor.cpp(1207,11): warning C4566: character represented by universal-character-name '\u2713' cannot be represented in the current code page (1252)
+D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\nearestNeighbor.cpp(1250,4): error C2660: 'color': function does not take 0 arguments
+      D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\nearestNeighbor.cpp(413,6):
+      see declaration of 'color'
+      D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\nearestNeighbor.cpp(1250,4):
+      while trying to match the argument list '()'
+  
+D:\Abbas\sem_3\DSA_Project\Parcel-Distribution\Parcel_Distribution\nearestNeighbor.cpp(1660,44): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data

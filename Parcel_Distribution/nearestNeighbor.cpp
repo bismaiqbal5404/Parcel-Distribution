@@ -103,6 +103,7 @@ bool menu1(int choose);
 void startDelivery(string loc, double capacity);
 void viewAssignedOrders();
 void loadOrdersFromFile();
+void color(int color);
 vector<Node*> computeSingleRiderRoute(const string& startCode, const vector<int>& placedIndices, double capacity);
 
 class MinHeap {
@@ -234,6 +235,51 @@ void MinHeap::MinHeapify(int i) {
 		heapSwap(i, smallest);
 		MinHeapify(smallest);
 	}
+}
+
+// Helper function to get console width and height
+void getConsoleSize(int& width, int& height) {
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)) {
+		width = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+		height = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+	}
+	else {
+		width = 80;
+		height = 25;
+	}
+}
+
+// Center text horizontally
+void printCentered(const string& text, int y, int consoleWidth, int colorCode = 7) {
+	int x = (consoleWidth - (int)text.length()) / 2;
+	gotoxy(x, y);
+	color(colorCode);
+	cout << text;
+}
+
+// Draw a box border with characters
+void drawBox(int left, int top, int width, int height, int colorCode = 7) {
+	color(colorCode);
+	// Top border
+	gotoxy(left, top);
+	cout << char(201); // ┌
+	for (int i = 0; i < width - 2; i++) cout << char(205); // ─
+	cout << char(187); // ┐
+
+	// Sides
+	for (int i = 1; i < height - 1; i++) {
+		gotoxy(left, top + i);
+		cout << char(186); // │
+		gotoxy(left + width - 1, top + i);
+		cout << char(186); // │
+	}
+
+	// Bottom border
+	gotoxy(left, top + height - 1);
+	cout << char(200); // └
+	for (int i = 0; i < width - 2; i++) cout << char(205); // ─
+	cout << char(188); // ┘
 }
 
 static string unquote(const string& s) {
@@ -378,65 +424,64 @@ void gotoxy(int x, int y) {
 
 // welcome screen 
 int welcome() {
-	int Set[] = { 7,7,7,7 }; // color code for white 
-	int counter = 1; // to keep track 
-	char key; // for arrow key input 
+	int consoleWidth, consoleHeight;
+	getConsoleSize(consoleWidth, consoleHeight);
+	system("cls");
+
+	int boxWidth = 60;
+	int boxHeight = 15;
+	int left = (consoleWidth - boxWidth) / 2;
+	int top = (consoleHeight - boxHeight) / 2;
+
+	drawBox(left, top, boxWidth, boxHeight, 11); // Light Cyan box
+
+	// Title
+	printCentered("Parcel Distribution System", top + 1, consoleWidth, 14); // Yellow
+
+	// Subtitle / tagline
+	printCentered("Delivering your parcels safely and swiftly!", top + 3, consoleWidth, 7);
+
+	// Instructions
+	printCentered("Please login or register to continue", top + 5, consoleWidth, 7);
+
+	// Menu options
+	int Set[] = { 7,7,7 };
+	int counter = 1;
+	char key;
 	int log;
 
-	system("cls");
-	cout << "\t\tParcel Distribution System\t\n\n\tAll your Parcels delivered to you safely and quickly\n\n";
-	cout << "\tAlready have an account?\n\n\tLogin or register an account to continue.\n\n";
-
-	for (;;) {
-		gotoxy(10, 8);
-		color(Set[0]);
-		cout << "1. Login ";
-		gotoxy(28, 8);
-		color(Set[1]);
-		cout << "\t 2. Register an account\n\t";
-		gotoxy(10, 10);
-		color(Set[2]);
-		cout << "3. Exit";
-
-		key = _getch();
-
-		if (key == 75 && (counter == 2 || counter == 4)) { //75 left key 
-			counter--;
-		}
-		if (key == 77 && (counter == 1)) { //77 right key 
-			counter++;
-		}
-		if (key == 72 && (counter == 3 || counter == 4)) { //72 up Arr key
-			counter--;
-			counter--;
-		}
-		if (key == 80 && (counter == 1)) { //80 down Arr key
-			counter++;
-			counter++;
-		}
-		if (key == '\r') { // carriage return OR Enter key 
-			log = counter;
-			color(7);
-			return log;
-		}
-
-		// by default color white 
+	while (true) {
+		// Reset colors
 		Set[0] = 7;
 		Set[1] = 7;
 		Set[2] = 7;
-		Set[3] = 7;
 
-		if (counter == 1) {
-			Set[0] = 12; // setting color to red 
+		// Highlight current choice in bright red
+		Set[counter - 1] = 12;
+
+		// Print options centered with spacing
+		string opt1 = "1. Login";
+		string opt2 = "2. Register an account";
+		string opt3 = "3. Exit";
+
+		// Position options vertically spaced
+		printCentered(opt1, top + 7, consoleWidth, Set[0]);
+		printCentered(opt2, top + 9, consoleWidth, Set[1]);
+		printCentered(opt3, top + 11, consoleWidth, Set[2]);
+
+		key = _getch();
+
+		if ((key == 72 || key == 'w' || key == 'W') && counter > 1) { // Up arrow or w
+			counter--;
 		}
-		if (counter == 2) {
-			Set[1] = 12; // setting color to red 
+		else if ((key == 80 || key == 's' || key == 'S') && counter < 3) { // Down arrow or s
+			counter++;
 		}
-		if (counter == 3) {
-			Set[2] = 12; // setting color to red 
-		}
-		if (counter == 4) {
-			Set[3] = 12; // setting color to red 
+		else if (key == '\r') { // Enter key
+			log = counter;
+			color(7);
+			system("cls");
+			return log;
 		}
 	}
 }
@@ -510,121 +555,180 @@ bool startsWithLetters(const string& str) {
 
 // Main registration function
 bool registerUser() {
+	int consoleWidth, consoleHeight;
+	getConsoleSize(consoleWidth, consoleHeight);
+	int boxWidth = 60;
+	int boxHeight = 13;
+	int left = (consoleWidth - boxWidth) / 2;
+	int top = (consoleHeight - boxHeight) / 2;
+
 	while (true) {
-		cout << "\nEnter username: ";
+		system("cls");
+		drawBox(left, top, boxWidth, boxHeight, 11);
+		printCentered("User Registration", top + 1, consoleWidth, 14);
+
+		gotoxy(left + 4, top + 3);
+		color(7);
+		cout << "Enter username (must start with letter): ";
 		getline(cin, userInfo.username);
 		userInfo.username = trim(userInfo.username);
 
 		if (userInfo.username.empty() || !startsWithLetters(userInfo.username)) {
-			cout << "\tInvalid username! It must start with a letter.\n";
+			gotoxy(left + 4, top + 5);
+			color(12);
+			cout << "Invalid username! Must start with a letter.";
+			_getch();
 			continue;
 		}
 
 		if (checkUsername(userInfo.username)) {
-			cout << "\tUsername already exists! Please choose a different one.\n";
-			continue; // Changed from return false to continue
-		}
-
-		break; // Valid username and doesn't exist
-	}
-
-	// Get password
-	while (true) {
-		cout << "\tEnter password: ";
-		getline(cin, userInfo.password);
-		userInfo.password = trim(userInfo.password);
-		if (userInfo.password.empty()) {
-			cout << "\tPassword cannot be empty.\n";
+			gotoxy(left + 4, top + 5);
+			color(12);
+			cout << "Username already exists! Choose a different one.";
+			_getch();
 			continue;
 		}
-		break;
-	}
 
-	// Get role
-	while (true) {
-		cout << "\n\tSelect Role:\n";
-		cout << "\t1. Rider\n";
-		cout << "\t2. Customer\n";
-		cout << "\tEnter choice (1 or 2): ";
+		// Password input
+		gotoxy(left + 4, top + 5);
+		color(7);
+		cout << "Enter password: ";
+		getline(cin, userInfo.password);
+		userInfo.password = trim(userInfo.password);
+
+		if (userInfo.password.find(' ') != string::npos) {
+			gotoxy(left + 4, top + 7);
+			color(12);
+			cout << "Password cannot contain spaces.";
+			_getch();
+			continue;
+		}
+
+		// Role selection
 		string input;
-		getline(cin, input);
-		input = trim(input);
-
-		if (input == "1") {
-			userInfo.role = "rider";
-			break;
+		while (true) {
+			gotoxy(left + 4, top + 7);
+			color(7);
+			cout << "Select Role: 1. Rider  2. Customer (Enter 1 or 2): ";
+			getline(cin, input);
+			input = trim(input);
+			if (input == "1") {
+				userInfo.role = "rider";
+				break;
+			}
+			else if (input == "2") {
+				userInfo.role = "customer";
+				break;
+			}
+			else {
+				gotoxy(left + 4, top + 9);
+				color(12);
+				cout << "Invalid choice. Please enter 1 or 2.";
+				_getch();
+				gotoxy(left + 4, top + 9);
+				cout << string(50, ' '); // Clear previous error
+			}
 		}
-		else if (input == "2") {
-			userInfo.role = "customer";
-			break;
+
+		// Save data to files
+		ofstream unameFile("usernames.txt", ios::app);
+		if (!unameFile) {
+			gotoxy(left + 4, top + 10);
+			color(12);
+			cout << "ERROR! Unable to open usernames.txt";
+			_getch();
+			return false;
 		}
-		else {
-			cout << "\tInvalid choice. Please enter 1 for Rider or 2 for Customer.\n";
+		unameFile << userInfo.username << endl;
+		unameFile.close();
+
+		ofstream userFile("users.txt", ios::app);
+		if (!userFile) {
+			gotoxy(left + 4, top + 10);
+			color(12);
+			cout << "ERROR! Unable to open users.txt";
+			_getch();
+			return false;
 		}
-	}
+		userFile << userInfo.username << "\n" << userInfo.password << "\n" << userInfo.role << "\n";
+		userFile.close();
 
-	// Write username to usernames.txt
-	ofstream unameFile("usernames.txt", ios::app);
-	if (!unameFile) {
-		cout << "ERROR! Unable to open usernames.txt\n";
-		return false;
+		gotoxy(left + 4, top + 11);
+		color(10); // Green
+		cout << "Registration Successful! Press any key to continue...";
+		_getch();
+		return true;
 	}
-	unameFile << userInfo.username << endl;
-	unameFile.close();
-
-	// Write full user data to users.txt
-	ofstream userFile("users.txt", ios::app);
-	if (!userFile) {
-		cout << "ERROR! Unable to open users.txt\n";
-		return false;
-	}
-	userFile << userInfo.username << " " << userInfo.password << " " << userInfo.role << "\n";
-	userFile.close();
-
-	cout << "Registration Successful!\n";
-	return true;
 }
 
 // function to login 
 bool loginUser() {
-	string u, p, name, password, role;
-	bool flag = false;
-	cout << "\n\tLogin Info:" << endl;
-	cout << "\tEnter your username: ";
-	getline(cin, name);
-	cout << "\tEnter your password: ";
-	getline(cin, password); // Changed from cin >> password to getline
+	int consoleWidth, consoleHeight;
+	getConsoleSize(consoleWidth, consoleHeight);
+	int boxWidth = 60;
+	int boxHeight = 10;
+	int left = (consoleWidth - boxWidth) / 2;
+	int top = (consoleHeight - boxHeight) / 2;
 
-	ifstream inFile("users.txt");
-	if (inFile.is_open()) {
-		while (inFile >> u >> p >> role) {
-			if (u == name && p == password) {
-				inFile.close();
-				fileName = name + ".txt";
-				userInfo.username = u;
-				userInfo.role = role;
-				userInfo.password = p;
-				cout << "\tLogin Successful." << endl;
+	while (true) {
+		system("cls");
+		drawBox(left, top, boxWidth, boxHeight, 11);
+		printCentered("User Login", top + 1, consoleWidth, 14);
 
-				if (role == "customer") {
-					cout << "\n\tWelcome, customer " << userInfo.username << "!" << endl;
-					customerMenu();
+		string u, p, name, password, role;
+		bool flag = false;
+		gotoxy(left + 4, top + 3);
+		color(7);
+		cout << "Username: ";
+		getline(cin, name);
+
+		gotoxy(left + 4, top + 5);
+		cout << "Password: ";
+		getline(cin, password);
+
+		ifstream inFile("users.txt");
+		if (inFile.is_open()) {
+			while (inFile >> u >> p >> role) {
+				if (u == name && p == password) {
+					inFile.close();
+					fileName = name + ".txt";
+					userInfo.username = u;
+					userInfo.role = role;
+					userInfo.password = p;
+
+					username = u;
+					//fileName = u + ".txt";
+
+					gotoxy(left + 4, top + 7);
+					color(10); // Green
+					cout << "Login Successful! Press any key to continue...";
+					_getch();
+					inFile.close();
+
+					system("cls");
+					if (role == "customer") {
+						customerMenu();
+					}
+					else if (role == "rider") {
+						riderMenu();
+					}
+					return true;
 				}
-				else if (role == "rider") {
-					cout << "\n\tWelcome, rider " << userInfo.username << "!" << endl;
-					riderMenu();
-				}
-
-				return true;
 			}
+			inFile.close();
+
+			gotoxy(left + 4, top + 7);
+			color(12); // Red
+			cout << "Login failed! Incorrect username or password.";
+			_getch();
 		}
-		inFile.close();
-		cout << "\tLogin Unsuccessful, please provide correct credentials next time!" << endl;
-		return false;
-	}
-	else {
-		cout << "\tError: Unable to open file for login." << endl;
-		return false;
+		else {
+			gotoxy(left + 4, top + 7);
+			color(12);
+			cout << "Error: Unable to open users.txt";
+			_getch();
+			return false;
+		}
 	}
 }
 
@@ -970,6 +1074,7 @@ void customerMenu() {
 	} while (choice != 5);
 }
 
+
 vector<int> collectPlacedOrders() {
 	loadOrdersFromFile(); // load orders from file
 	vector<int> placed;
@@ -1092,17 +1197,28 @@ void riderDispatchAll() {
 		cout << "\n=== Dispatching orders for Rider: " << username
 			<< " (start at " << startCode << ") ===\n";
 
+		color(11);
+		cout << "Optimizing route for " << username << "...\n";
+		color(7);
+
 		vector<Node*> route = computeSingleRiderRoute(startCode, riderBuckets[r], capacities[r]);
 		saveAllOrdersToFile();
+		color(11);
+		cout << "✓ Optimization complete!\n";
+		color(7);
 
 		if (!route.empty()) {
-			cout << "--- Full Node‐by‐Node Route for " << username << " ---\n";
+			/*cout << "--- Full Node‐by‐Node Route for " << username << " ---\n";
 			for (Node* hop : route) {
 				cout << hop->code << " (" << hop->areaName << ")\n";
-			}
+			}*/
+			cout << "[Route Summary] " << startCode
+				<< " - " << route.back()->code
+				<< " (" << route.back()->areaName << ")\n";
+
 			Node* lastNode = route.back();
-			cout << "Final Location: "
-				<< lastNode->code << " (" << lastNode->areaName << ")\n";
+			/*cout << "Final Location: "
+				<< lastNode->code << " (" << lastNode->areaName << ")\n";*/
 			// (E) Update riderCurrentLoc so next dispatch uses this as the start
 			riderCurrentLoc[username] = lastNode->code;
 		}
@@ -1131,6 +1247,7 @@ void riderMenu() {
 			break;
 		case 2:
 			riderDispatchAll();
+			color(10);
 			break;
 
 		case 3:
@@ -1149,6 +1266,7 @@ void riderMenu() {
 		}
 	} while (choice != 3);
 }
+
 
 double timeInMinutes(Node* A, Node* B) {
 	auto& spInfo = allShortestPaths[A->code].first;
@@ -1193,11 +1311,11 @@ vector<Node*> twoOptOptimizeRoute(
 			for (size_t k = i + 1; k < N && !improved; ++k) {
 				bool validSwap = true;
 
-				
+
 				unordered_map<int, size_t> origPickIdx, origDropIdx;
 				for (size_t x = i; x <= k; ++x) {
 					Node* node = bestRoute[x];
-					
+
 					auto itOrd = nodeToOrder.find(node);
 					if (itOrd == nodeToOrder.end()) {
 						continue;
@@ -1211,12 +1329,12 @@ vector<Node*> twoOptOptimizeRoute(
 						origPickIdx[ord] = x;
 					}
 				}
-				
+
 				for (auto& kv : origPickIdx) {
 					int ord = kv.first;
-					size_t p = kv.second;              
+					size_t p = kv.second;
 					if (origDropIdx.count(ord)) {
-						size_t d = origDropIdx[ord];         
+						size_t d = origDropIdx[ord];
 						size_t newP = i + (k - p);
 						size_t newD = i + (k - d);
 						if (newP >= newD) {
@@ -1229,9 +1347,9 @@ vector<Node*> twoOptOptimizeRoute(
 
 				for (auto& kv : origDropIdx) {
 					int ord = kv.first;
-					size_t d = kv.second;                    
+					size_t d = kv.second;
 					if (!origPickIdx.count(ord)) {
-						size_t origP = N; 
+						size_t origP = N;
 						for (size_t y = 0; y < N; ++y) {
 							auto itO = nodeToOrder.find(bestRoute[y]);
 							if (itO != nodeToOrder.end() && itO->second == ord
@@ -1425,9 +1543,9 @@ vector<Node*> computeSingleRiderRoute(const string& startCode, const vector<int>
 			currentLoad += t.weight;
 			t.pickedUp = true;
 			currentNode = t.pickupNode;
-			cout << "Order " << t.ordIdx << " picked up at "
-				<< currentNode->areaName
-				<< ". (Load=" << currentLoad << ")\n";
+			cout << "Order #" << t.ordIdx
+				<< " | Pickup: " << currentNode->code << " (" << currentNode->areaName << ")"
+				<< " | Weight: " << fixed << setprecision(1) << t.weight << " kg\n";
 		}
 		else {
 			auto& prevMap2 = allShortestPaths[currentNode->code].second;
@@ -1449,12 +1567,14 @@ vector<Node*> computeSingleRiderRoute(const string& startCode, const vector<int>
 			t.delivered = true;
 			orders[t.ordIdx].status = "Delivered";
 			currentNode = t.dropoffNode;
-			cout << "Order " << t.ordIdx << " delivered at "
-				<< currentNode->areaName
-				<< ". (Load=" << currentLoad
-				<< ") Distance: " << fixed << setprecision(2)
-				<< d2 << " km\n";
+			color(10);
+			cout << "Order #" << t.ordIdx
+				<< " | Drop: " << currentNode->code << " (" << currentNode->areaName << ")"
+				<< " | Remaining Load: " << currentLoad
+				<< " | Dist: " << fixed << setprecision(2) << d2 << " km\n";
+			color(7);
 		}
+
 	}
 
 	set<int> printMissed, printHeavy;
@@ -1469,35 +1589,42 @@ vector<Node*> computeSingleRiderRoute(const string& startCode, const vector<int>
 		}
 	}
 
-	if(!printMissed.empty()) {
+	if (!printMissed.empty()) {
 		cout << "\n--- MISSED OR UNREACHABLE ORDERS ---\n";
 		for (int idx : printMissed) {
+			color(14);
 			cout << "Order " << idx
 				<< " missed/unreachable. Deadline = "
 				<< orders[idx].deadlineTime << " min\n";
+			color(7);
 		}
 	}
 	if (!printHeavy.empty()) {
 		cout << "\n--- TOO HEAVY FOR THIS VEHICLE ---\n";
 		for (int idx : printHeavy) {
+			color(12);
 			cout << "Order " << idx
 				<< " weight=" << fixed << setprecision(2)
 				<< orders[idx].parcelWeight
 				<< " kg > capacity=" << capacity << " kg\n";
+			color(7);
 		}
 	}
 
 	unordered_map<Node*, int> nodeToOrder;
-	   unordered_map<Node*, bool> nodeIsDrop;
-	   for (auto& t : tasks) {
-	       nodeToOrder[t.pickupNode]  = t.ordIdx;
-	       nodeIsDrop[t.pickupNode]   = false;
-	       nodeToOrder[t.dropoffNode] = t.ordIdx;
-	       nodeIsDrop[t.dropoffNode]  = true;
-	   }
+	unordered_map<Node*, bool> nodeIsDrop;
+	for (auto& t : tasks) {
+		nodeToOrder[t.pickupNode] = t.ordIdx;
+		nodeIsDrop[t.pickupNode] = false;
+		nodeToOrder[t.dropoffNode] = t.ordIdx;
+		nodeIsDrop[t.dropoffNode] = true;
+	}
 
-	if (fullVisitSequence.size() >3) {
+	if (fullVisitSequence.size() > 3) {
+		int w, h;
+		color(11);
 		fullVisitSequence = twoOptOptimizeRoute(startCode, fullVisitSequence, nodeToOrder, nodeIsDrop);
+		color(7);
 	}
 
 	return fullVisitSequence;
@@ -1512,8 +1639,8 @@ void viewAssignedOrders() {
 	for (const auto& Order : orders) {
 		if (Order.status == "Placed") {
 			cout << "Order ID: " << Order.orderID << endl;
-			cout << "Pickup Location: " << Order.pickupNodeCode << endl;
-			cout << "Drop-off Location: " << Order.dropoffNodeCode << endl;
+			cout << "Pickup Location: " << G.nodesByCode[Order.pickupNodeCode]->areaName << endl;
+			cout << "Drop-off Location: " << G.nodesByCode[Order.dropoffNodeCode]->areaName << endl;
 			cout << "-----------------------------\n";
 			found = true;
 		}

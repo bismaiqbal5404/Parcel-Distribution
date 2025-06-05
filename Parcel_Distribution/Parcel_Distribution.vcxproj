@@ -127,6 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="formatted.cpp" />
     <ClCompile Include="nearestNeighbor.cpp" />
     <ClCompile Include="graph.cpp" />
     <ClCompile Include="source.cpp" />
